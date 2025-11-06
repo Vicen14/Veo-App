@@ -1,17 +1,85 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 1
-    </ion-title>
+<ion-header>
+  <ion-toolbar class="top-toolbar">
+    <div class="toolbar-row">
+      <div class="title">Búsqueda</div>
+      <ion-button class="locate-btn" fill="solid" color="tertiary" size="small" shape="round" (click)="onLocateClick($event)">
+        <ion-icon name="navigate-outline"></ion-icon>
+      </ion-button>
+    </div>
+    <div class="search-row">
+      <ion-searchbar placeholder="Buscar lugares..." class="searchbar" show-clear-button="focus" (ionInput)="onSearchInput($event)"></ion-searchbar>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 1</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content>
+  <!-- Chips row -->
+  <div class="chips-strip">
+    <ion-chip class="chip"
+              *ngFor="let c of categories"
+              [class.active]="c.id === selectedCategory"
+              (click)="selectCategory(c.id)"
+              [attr.aria-pressed]="c.id === selectedCategory">
+      <ion-icon [name]="c.icon"></ion-icon>
+      <ion-label>{{ c.label }}</ion-label>
+    </ion-chip>
+  </div>
 
-  <app-explore-container name="Tab 1 page"></app-explore-container>
+  <!-- Autocomplete suggestions -->
+  <div class="ac-panel" *ngIf="predictions.length > 0">
+    <button type="button" class="ac-item" *ngFor="let p of predictions" (click)="onSelectPrediction(p)">
+      <ion-icon name="search-outline"></ion-icon>
+      <span>{{ p.description }}</span>
+    </button>
+  </div>
+
+  <!-- Map area placeholder -->
+  <div class="map-wrap">
+    <div #mapEl class="map-el" role="application" aria-label="Mapa de lugares"></div>
+    <div class="found-pill" [class.show]="true">
+      <ion-icon name="location-outline"></ion-icon>
+      <span>{{ foundCount }} lugares encontrados</span>
+    </div>
+  </div>
+
+  <!-- Bottom sheet with results -->
+  <div class="results-sheet">
+    <div class="sheet-header">
+      <h2>Cerca de ti</h2>
+      <button class="see-all" type="button" (click)="onSeeAll()">Ver todo</button>
+    </div>
+
+    <!-- Estado: cargando (skeleton) -->
+    <div *ngIf="isLoading" class="list">
+      <div class="place-skeleton" *ngFor="let s of skeletons"></div>
+    </div>
+
+    <!-- Estado: vacío / por buscar -->
+    <div *ngIf="!isLoading && results.length === 0" class="empty">
+      <ion-icon name="search-outline"></ion-icon>
+      <p>Los resultados aparecerán aquí</p>
+    </div>
+
+    <!-- Lista de resultados -->
+    <div *ngIf="!isLoading && results.length > 0" class="list">
+      <div class="place-card" *ngFor="let r of results; let i = index" (click)="onMarkerClick(i)">
+        <img src="assets/icon/icon.png" alt="thumbnail" />
+        <div class="info">
+          <div class="title-row">
+            <h3>{{ r.name }}</h3>
+            <div class="rating" *ngIf="r.rating">
+              <ion-icon name="star"></ion-icon><span>{{ r.rating | number:'1.1-1' }}</span>
+            </div>
+          </div>
+          <div class="meta" *ngIf="r.address"><ion-icon name="location-outline"></ion-icon><span>{{ r.address }}</span></div>
+          <div class="meta">
+            <ion-icon name="time-outline"></ion-icon>
+            <span class="open" *ngIf="r.openNow === true">Abierto</span>
+            <span *ngIf="r.openNow === false">Cerrado</span>
+            <span class="distance" *ngIf="r.distanceKm != null">{{ r.distanceKm | number:'1.1-1' }} km</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </ion-content>

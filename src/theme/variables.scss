@@ -1,2 +1,53 @@
-// For information on how to create your own theme, please see:
-// http://ionicframework.com/docs/theming/
+// Ionic Theme Variables
+// Reference: https://ionicframework.com/docs/theming
+
+:root {
+	// paleta de colores
+	--color-deep: #312C51;
+	--color-mid: #48426D; 
+	--color-sand: #F0C38E; 
+	--color-peach: #F1AA9B; 
+	--color-cloud: #CCD0CF; 
+
+	
+	--ion-color-primary: var(--color-deep);
+	--ion-color-primary-rgb: 49, 44, 81;
+	--ion-color-primary-contrast: #ffffff;
+	--ion-color-primary-contrast-rgb: 255, 255, 255;
+	--ion-color-primary-shade: #2b2747;
+	--ion-color-primary-tint: #3f3963;
+
+	--ion-color-secondary: var(--color-mid);
+	--ion-color-secondary-rgb: 72, 66, 109;
+	--ion-color-secondary-contrast: #ffffff;
+	--ion-color-secondary-contrast-rgb: 255, 255, 255;
+	--ion-color-secondary-shade: #403b61;
+	--ion-color-secondary-tint: #5b5480;
+
+	--ion-color-tertiary: var(--color-sand);
+	--ion-color-tertiary-rgb: 240, 195, 142;
+	--ion-color-tertiary-contrast: #312C51;
+	--ion-color-tertiary-contrast-rgb: 49, 44, 81;
+	--ion-color-tertiary-shade: #d3aa7d;
+	--ion-color-tertiary-tint: #f2cda2;
+
+	--ion-color-success: #2ecc71;
+	--ion-color-warning: #f39c12;
+	--ion-color-danger: #e74c3c;
+
+
+	--ion-background-color: #faf9fb;
+	--ion-toolbar-background: var(--color-deep);
+	--ion-tab-bar-background: var(--color-deep);
+	--ion-text-color: #1a1a1a;
+}
+
+
+.bg-deep { background: var(--color-deep); }
+.bg-peach { background: var(--color-peach); }
+.bg-sand { background: var(--color-sand); }
+.text-deep { color: var(--color-deep); }
+.text-mid { color: var(--color-mid); }
+.text-sand { color: var(--color-sand); }
+.text-cloud { color: var(--color-cloud); }
+
