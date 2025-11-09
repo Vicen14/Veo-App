@@ -71,10 +71,15 @@ Aplicación híbrida Ionic + Angular para descubrir lugares de entretenimiento c
 - Archivos reales (ignorados por Git):
   - `src/environments/environment.ts` (dev)
   - `src/environments/environment.prod.ts` (prod)
-- Archivos de ejemplo incluidos en el repo:
+- Archivos de ejemplo incluidos:
   - `src/environments/environment.example.ts`
   - `src/environments/environment.prod.example.ts`
-- Cómo usarlos: copia los ejemplos a los reales y rellena tus API keys de Google Maps/Places.
+- Ahora se usa UNA sola clave (`googleMaps.apiKey`) habilitada para Maps JavaScript API y Places.
+- Pasos:
+  1. Copia los archivos example a sus nombres reales si no existen.
+  2. Rellena `YOUR_GOOGLE_API_KEY` con tu clave restringida.
+  3. Nunca subas los archivos reales (están en `.gitignore`).
+- Recomendado: restringe la key por referrer (web) y por app id / firma (móvil), y limita solo a las APIs requeridas.
 
 ## Scripts de NPM
 
