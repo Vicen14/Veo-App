@@ -1,3 +1,4 @@
+// Página de Búsqueda (Tab1): integra mapa, filtros y búsquedas con Google Places
 import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import {
   IonHeader,
@@ -23,8 +24,11 @@ import {
   timeOutline,
 } from 'ionicons/icons';
 import { CommonModule } from '@angular/common';
+// Loader para cargar Google Maps JavaScript API con librería de Places
 import { Loader } from '@googlemaps/js-api-loader';
+// Entornos: claves de API se leen desde environment.ts (ignoradas en git)
 import { environment } from '../../environments/environment';
+// Geolocalización del dispositivo/navegador con Capacitor
 import { Geolocation } from '@capacitor/geolocation';
 
 @Component({
@@ -47,7 +51,7 @@ export class Tab1Page implements AfterViewInit {
   @ViewChild('mapEl', { static: false }) mapEl?: ElementRef<HTMLDivElement>;
   map?: google.maps.Map;
   googleMarkers: google.maps.Marker[] = [];
-  // UI state
+  // Estado de UI: categorías de filtros
   categories = [
     { id: 'all', label: 'Todos', icon: 'options-outline' },
     { id: 'cinema', label: 'Cines', icon: 'film-outline' },
@@ -58,16 +62,16 @@ export class Tab1Page implements AfterViewInit {
   ];
   selectedCategory: string = 'cinema';
 
-  // Default center (CDMX)
+  // Centro por defecto (CDMX) si no se obtiene ubicación
   center: google.maps.LatLngLiteral = { lat: 19.4326, lng: -99.1332 };
   activeMarker: number | null = null;
   foundCount = 0;
 
-  // Results and loading placeholders
+  // Resultados y placeholders de carga
   isLoading = false;
   results: any[] = [];
   skeletons = Array.from({ length: 3 });
-  // Autocomplete state
+  // Estado de Autocomplete (predicciones y token)
   predictions: google.maps.places.AutocompletePrediction[] = [];
   private acService?: google.maps.places.AutocompleteService;
   private acToken?: google.maps.places.AutocompleteSessionToken;
@@ -86,6 +90,7 @@ export class Tab1Page implements AfterViewInit {
     });
   }
 
+  // Inicializa mapas/places, intenta centrar en el usuario y realiza la primera búsqueda
   async ngAfterViewInit() {
     const loader = new Loader({
       apiKey: environment.googleMaps.apiKey,
@@ -108,6 +113,7 @@ export class Tab1Page implements AfterViewInit {
     await this.searchNearby();
   }
 
+  // Cambia de categoría y vuelve a buscar
   selectCategory(id: string) {
     if (this.selectedCategory === id) return;
     this.selectedCategory = id;
@@ -115,6 +121,7 @@ export class Tab1Page implements AfterViewInit {
     this.searchNearby();
   }
 
+  // Realza el marcador clicado en el mapa
   onMarkerClick(index: number) {
     this.activeMarker = index;
     const m = this.googleMarkers[index];
@@ -123,6 +130,7 @@ export class Tab1Page implements AfterViewInit {
     setTimeout(() => m.setAnimation(null), 700);
   }
 
+  // Intenta obtener la ubicación actual; en web dispara el prompt del navegador
   private async centerOnUserIfPossible() {
     try {
       // Directly call getCurrentPosition: on web this will trigger the browser prompt
@@ -135,6 +143,7 @@ export class Tab1Page implements AfterViewInit {
     }
   }
 
+  // Ejecuta Nearby Search según la categoría seleccionada y deduplica/ordena por distancia
   private async searchNearby() {
     if (!this.map) return;
     this.isLoading = true;
@@ -184,6 +193,7 @@ export class Tab1Page implements AfterViewInit {
     this.renderMarkers();
   }
 
+  // Dibuja marcadores en el mapa y agrega listeners de click
   private renderMarkers() {
     this.clearMarkers();
     this.googleMarkers = this.results.map((r, i) => new google.maps.Marker({
@@ -201,11 +211,13 @@ export class Tab1Page implements AfterViewInit {
     this.googleMarkers.forEach((m, i) => m.addListener('click', () => this.onMarkerClick(i)));
   }
 
+  // Limpia los marcadores actuales del mapa
   private clearMarkers() {
     this.googleMarkers.forEach(m => m.setMap(null));
     this.googleMarkers = [];
   }
 
+  // Traduce una categoría a una query de Places (type o keyword)
   private buildQueryFromCategory(id: string) {
     switch (id) {
       case 'cinema':
@@ -227,6 +239,7 @@ export class Tab1Page implements AfterViewInit {
     }
   }
 
+  // Construye 1 o N queries (si es "Todos") para Places Nearby Search
   private buildQueries(id: string) {
     if (id !== 'all') return [this.buildQueryFromCategory(id)];
     // Combina los 5 tipos/keywords solicitados
@@ -239,6 +252,7 @@ export class Tab1Page implements AfterViewInit {
     ];
   }
 
+  // Distancia Haversine aproximada en km
   private distanceKm(a: google.maps.LatLngLiteral, b: google.maps.LatLngLiteral) {
     const R = 6371; // km
     const dLat = this.toRad(b.lat - a.lat);
@@ -251,11 +265,13 @@ export class Tab1Page implements AfterViewInit {
 
   private toRad(v: number) { return v * Math.PI / 180; }
 
+  // Acción para "Ver todo" (reservado para futuras vistas de lista completa)
   onSeeAll() {
     
     console.log('Ver todo clicado');
   }
 
+  // Botón "ubicarme": anima, centra y re-ejecuta búsqueda
   async onLocateClick(ev: Event) {
     const btn = ev.currentTarget as HTMLElement | null;
     if (!btn) return;
@@ -265,6 +281,7 @@ export class Tab1Page implements AfterViewInit {
     await this.searchNearby();
   }
 
+  // Pequeña animación de carga al cambiar de categoría
   private animateSearch() {
     // Simulate a short loading to trigger skeletons
     this.isLoading = true;
@@ -275,6 +292,7 @@ export class Tab1Page implements AfterViewInit {
     }, 800);
   }
 
+  // Maneja el input de búsqueda y pide predicciones a Autocomplete
   onSearchInput(ev: CustomEvent) {
     const value = (ev as any).detail?.value?.trim();
     if (!value) { this.predictions = []; return; }
@@ -289,6 +307,7 @@ export class Tab1Page implements AfterViewInit {
     });
   }
 
+  // Al seleccionar una predicción: centra el mapa en el lugar y busca de nuevo
   onSelectPrediction(p: google.maps.places.AutocompletePrediction) {
     if (!this.map) return;
     const svc = new google.maps.places.PlacesService(this.map);
