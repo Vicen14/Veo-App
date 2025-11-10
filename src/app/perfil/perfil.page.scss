@@ -4,3 +4,35 @@
     --color: #fff;
   }
 }
+
+/* Lighter page background and profile card */
+ion-content {
+  --background: var(--color-cloud);
+}
+
+.profile-container { display:flex; justify-content:center; padding:20px; }
+.profile-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-sand);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(49,44,81,0.06);
+  text-align: center;
+}
+.avatar { font-size: 48px; margin-bottom: 8px; }
+.name { margin: 0 0 6px 0; color: var(--color-deep); }
+.email { margin: 0 0 12px 0; color: var(--color-mid); }
+.buttons { display:flex; flex-direction:column; gap:8px; }
+
+/* Ensure clear buttons are legible inside profile card */
+.profile-card ion-button[fill="clear"] { color: var(--color-deep) !important; }
+.profile-card ion-button ion-icon { color: inherit; }
+
+/* Responsive: make profile card buttons full width on small screens */
+@media (max-width: 600px) {
+  .profile-card .buttons ion-button {
+    width: 100% !important;
+    display: block;
+  }
+}

@@ -8,6 +8,10 @@ export const environment = {
   googleMaps: {
     apiKey: '',
   },
+  // Clave para Places API (HTTP) si decides separarla de la de Maps
+  googlePlaces: {
+    apiKey: '',
+  },
 };
 
 /*

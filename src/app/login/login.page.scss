@@ -1,0 +1,55 @@
+.actions { margin-top: 18px; }
+.forgot { margin-top: 8px; text-align: center; }
+
+/* Use lighter palette: page background = cloud, form card = sand */
+ion-content {
+  --background: var(--color-cloud);
+}
+
+.login-card {
+  background: var(--color-sand);
+  padding: 18px;
+  margin: 18px 0;
+  border-radius: 12px;
+  color: var(--color-deep);
+  box-shadow: 0 6px 18px rgba(49,44,81,0.07);
+}
+
+ion-button {
+  --background: var(--ion-color-primary);
+}
+
+ion-input { background: transparent; }
+
+/* Ensure clear buttons and nav buttons are legible on light backgrounds */
+.login-card ion-button[fill="clear"], .login-card .nav-row ion-button {
+  color: var(--color-deep) !important;
+}
+.login-card ion-button ion-icon, .login-card .nav-row ion-button ion-icon { color: inherit; }
+
+/* nav solid buttons for login page */
+.login-card .nav-row ion-button.nav-btn {
+  /* Use deep background and white text for maximum contrast */
+  --background: var(--color-deep) !important;
+  --color: var(--ion-color-primary-contrast) !important; /* usually white */
+  color: var(--ion-color-primary-contrast) !important;
+  font-weight: 700;
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.login-card .nav-row ion-button.nav-btn ion-icon { color: var(--ion-color-primary-contrast) !important; }
+
+/* Responsive: stack nav buttons on small screens for easier tapping */
+@media (max-width: 600px) {
+  .login-card .nav-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .login-card .nav-row ion-button.nav-btn {
+    width: 100% !important;
+    display: block;
+  }
+}

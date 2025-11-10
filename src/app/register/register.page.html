@@ -1,0 +1,44 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Registrarse</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="register-card">
+    <form (ngSubmit)="onRegister()">
+      <ion-item>
+        <ion-label position="floating">Correo electrónico</ion-label>
+        <ion-input type="email" [(ngModel)]="email" name="email" required></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Contraseña</ion-label>
+        <ion-input type="password" [(ngModel)]="password" name="password" required (ionInput)="checkPassword()"></ion-input>
+      </ion-item>
+
+      <div class="password-hint" [class.invalid]="!passwordValid && password">
+        La contraseña debe tener al menos 8 caracteres, contener una mayúscula y un número.
+      </div>
+
+      <div class="actions">
+        <ion-button expand="block" color="primary" [disabled]="!passwordValid || !email" (click)="onRegister()">Crear cuenta</ion-button>
+      </div>
+    </form>
+
+    <div class="nav-row">
+      <ion-button class="nav-btn" fill="solid" routerLink="/login">
+        <ion-icon name="log-in-outline"></ion-icon>
+        <span>Iniciar sesión</span>
+      </ion-button>
+      <ion-button class="nav-btn" fill="solid" routerLink="/tabs/tab1">
+        <ion-icon name="navigate-outline"></ion-icon>
+        <span>Explorar</span>
+      </ion-button>
+      <ion-button class="nav-btn" fill="solid" routerLink="/tabs/perfil">
+        <ion-icon name="person-outline"></ion-icon>
+        <span>Perfil</span>
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

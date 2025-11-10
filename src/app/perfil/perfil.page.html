@@ -5,6 +5,17 @@
 </ion-header>
 
 <ion-content>
-  <!-- Placeholder simple content -->
-  <div style="padding:16px; color:var(--color-deep)">Tu perfil aparecerá aquí.</div>
+  <div class="profile-container">
+    <div class="profile-card">
+      <div class="avatar">👤</div>
+      <h2 class="name text-deep">Tu nombre</h2>
+      <p class="email text-mid">usuario@ejemplo.com</p>
+
+      <div class="buttons">
+        <ion-button color="primary" routerLink="/register" expand="block">Editar perfil</ion-button>
+        <ion-button fill="clear" expand="block">Cerrar sesión</ion-button>
+      </div>
+    </div>
+  </div>
 </ion-content>
+

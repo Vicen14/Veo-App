@@ -1,23 +1,27 @@
-<!-- Encabezado superior con título y botón para ubicar al usuario -->
+<!-- encabezado superior con título y botón para ubicar al usuario -->
 <ion-header>
   <ion-toolbar class="top-toolbar">
     <div class="toolbar-row">
-      <!-- Título de la pantalla -->
+      <!-- título de la pantalla -->
       <div class="title">Búsqueda</div>
-      <!-- Botón de "ubicarme" que centra el mapa en tu ubicación actual -->
+      <!-- botón de "ubicarme" que centra el mapa en tu ubicación actual -->
       <ion-button class="locate-btn" fill="solid" color="tertiary" size="small" shape="round" (click)="onLocateClick($event)">
         <ion-icon name="navigate-outline"></ion-icon>
       </ion-button>
     </div>
     <div class="search-row">
-      <!-- Barra de búsqueda con Autocomplete de Google Places -->
+      <!-- barra de búsqueda con Autocomplete de Google Places -->
       <ion-searchbar placeholder="Buscar lugares..." class="searchbar" show-clear-button="focus" (ionInput)="onSearchInput($event)"></ion-searchbar>
     </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <!-- Tira de chips para filtrar por categoría -->
+  <!-- refresher para actualizar manualmente los resultados -->
+  <ion-refresher slot="fixed" (ionRefresh)="onRefresh($event)">
+    <ion-refresher-content pullingText="Desliza para actualizar" refreshingSpinner="circles" refreshingText="Actualizando..."></ion-refresher-content>
+  </ion-refresher>
+  <!-- tira de chips para filtrar por categoría -->
   <div class="chips-strip">
     <ion-chip class="chip"
               *ngFor="let c of categories"
@@ -29,7 +33,7 @@
     </ion-chip>
   </div>
 
-  <!-- Panel de sugerencias de Autocomplete -->
+  <!-- panel de sugerencias de Autocomplete -->
   <div class="ac-panel" *ngIf="predictions.length > 0">
     <button type="button" class="ac-item" *ngFor="let p of predictions" (click)="onSelectPrediction(p)">
       <ion-icon name="search-outline"></ion-icon>
@@ -37,7 +41,7 @@
     </button>
   </div>
 
-  <!-- Contenedor del mapa y contador de resultados -->
+  <!-- contenedor del mapa y contador de resultados -->
   <div class="map-wrap">
     <div #mapEl class="map-el" role="application" aria-label="Mapa de lugares"></div>
     <div class="found-pill" [class.show]="true">
@@ -46,41 +50,50 @@
     </div>
   </div>
 
-  <!-- Hoja inferior (bottom sheet) con resultados -->
+  <!-- hoja inferiorcon resultados -->
   <div class="results-sheet">
     <div class="sheet-header">
       <h2>Cerca de ti</h2>
       <button class="see-all" type="button" (click)="onSeeAll()">Ver todo</button>
     </div>
 
-    <!-- Estado: cargando (skeletons) -->
+    <!-- estado: cargando (skeletons) -->
     <div *ngIf="isLoading" class="list">
       <div class="place-skeleton" *ngFor="let s of skeletons"></div>
     </div>
 
-    <!-- Estado: vacío / por buscar -->
+    <!-- estado: vacío / por buscar -->
     <div *ngIf="!isLoading && results.length === 0" class="empty">
       <ion-icon name="search-outline"></ion-icon>
       <p>Los resultados aparecerán aquí</p>
     </div>
 
-    <!-- Lista de resultados -->
+    <!-- lista de resultados -->
     <div *ngIf="!isLoading && results.length > 0" class="list">
-      <div class="place-card" *ngFor="let r of results; let i = index" (click)="onMarkerClick(i)">
-        <img src="assets/icon/icon.png" alt="thumbnail" />
+      <div class="place-card" *ngFor="let r of results; let i = index" (click)="onMarkerClick(i)" [class.active]="activeMarker === i">
+        <div class="thumb" [class.loading]="imageLoading[i]" [class.error]="imageError[i]">
+          <img [src]="r.photoUrl || fallbackImg" alt="Foto de {{ r.name }}" loading="lazy" (load)="onImgLoad(i)" (error)="onImgError(i)" />
+          <div class="img-skeleton" *ngIf="imageLoading[i]"></div>
+          <div class="img-error" *ngIf="imageError[i]">Sin foto</div>
+        </div>
         <div class="info">
           <div class="title-row">
-            <h3>{{ r.name }}</h3>
+            <h3 class="name">{{ r.name }}</h3>
             <div class="rating" *ngIf="r.rating">
-              <ion-icon name="star"></ion-icon><span>{{ r.rating | number:'1.1-1' }}</span>
+              <ion-icon name="star"></ion-icon>
+              <span class="rating-value">{{ r.rating | number:'1.1-1' }}</span>
+              <span class="rating-count" *ngIf="r.userRatingCount">({{ r.userRatingCount }})</span>
             </div>
           </div>
-          <div class="meta" *ngIf="r.address"><ion-icon name="location-outline"></ion-icon><span>{{ r.address }}</span></div>
-          <div class="meta">
-            <ion-icon name="time-outline"></ion-icon>
-            <span class="open" *ngIf="r.openNow === true">Abierto</span>
-            <span *ngIf="r.openNow === false">Cerrado</span>
-            <span class="distance" *ngIf="r.distanceKm != null">{{ r.distanceKm | number:'1.1-1' }} km</span>
+          <p class="desc" *ngIf="r.description">{{ r.description }}</p>
+          <div class="meta-row">
+            <div class="meta" *ngIf="r.address"><ion-icon name="location-outline"></ion-icon><span>{{ r.address }}</span></div>
+            <div class="meta">
+              <ion-icon name="time-outline"></ion-icon>
+              <span class="open" *ngIf="r.openNow === true">Abierto</span>
+              <span *ngIf="r.openNow === false">Cerrado</span>
+              <span class="distance" *ngIf="r.distanceKm != null">{{ r.distanceKm | number:'1.1-1' }} km</span>
+            </div>
           </div>
         </div>
       </div>

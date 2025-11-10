@@ -1,0 +1,57 @@
+.actions { margin-top: 18px; }
+.password-hint { margin-top: 10px; color: var(--ion-color-danger); font-size: 0.9rem; }
+.password-hint.invalid { color: var(--ion-color-danger); }
+
+/* Lighter palette for register page */
+ion-content { --background: var(--color-cloud); }
+.register-card {
+	background: var(--color-peach);
+	padding: 16px;
+	margin: 16px 0;
+	border-radius: 10px;
+	color: var(--color-deep);
+	box-shadow: 0 6px 16px rgba(72,66,109,0.06);
+}
+
+ion-button { --background: var(--ion-color-primary); }
+
+/* Ensure clear buttons and nav buttons are legible on light backgrounds */
+.register-card ion-button[fill="clear"], .register-card .nav-row ion-button {
+	color: var(--color-deep) !important;
+	/* set Ionic shadow DOM color var so text/icon inherit inside the component */
+	--color: var(--color-deep) !important;
+}
+.register-card ion-button ion-icon, .register-card .nav-row ion-button ion-icon { color: inherit; }
+
+/* Also ensure the text inside the button elements (span) uses the same color */
+.register-card .nav-row ion-button span { color: var(--color-deep) !important; font-weight:600; font-size:14px; display:inline-block; }
+
+/* nav solid buttons: light background and deep text for contrast */
+.register-card .nav-row ion-button.nav-btn {
+	/* Use deep background and white text for maximum contrast */
+	--background: var(--color-deep) !important;
+	--color: var(--ion-color-primary-contrast) !important; /* usually white */
+	color: var(--ion-color-primary-contrast) !important;
+	font-weight: 700;
+	padding: 8px 12px;
+	border-radius: 6px;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.register-card .nav-row ion-button.nav-btn ion-icon { color: var(--ion-color-primary-contrast) !important; }
+
+/* Fallback: target common button parts so label/icon inside shadow DOM inherit color */
+.register-card .nav-row ion-button::part(icon) { color: var(--ion-color-primary-contrast) !important; }
+.register-card .nav-row ion-button::part(native) { color: var(--ion-color-primary-contrast) !important; }
+
+/* Responsive: stack nav buttons on small screens for easier tapping */
+@media (max-width: 600px) {
+	.register-card .nav-row {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.register-card .nav-row ion-button.nav-btn {
+		width: 100% !important;
+		display: block;
+	}
+}
