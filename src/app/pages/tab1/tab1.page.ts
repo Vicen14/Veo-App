@@ -29,7 +29,7 @@ import { CommonModule } from '@angular/common';
 // Loader para cargar Google Maps JavaScript API (el Places lo usaremos vía HTTP con su propia key)
 import { Loader } from '@googlemaps/js-api-loader';
 // Entornos: claves de API se leen desde environment.ts (ignoradas en git)
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 // Geolocalización del dispositivo/navegador con Capacitor
 import { Geolocation } from '@capacitor/geolocation';
 
