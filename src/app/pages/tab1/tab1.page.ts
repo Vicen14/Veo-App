@@ -64,7 +64,7 @@ export class Tab1Page implements AfterViewInit {
     { id: 'escape', label: 'Escape', icon: 'extension-puzzle-outline' },
     { id: 'entertainment', label: 'Entretenimiento', icon: 'options-outline' },
   ];
-  selectedCategory: string = 'cinema';
+  selectedCategory: string = 'all';
 
   // Centro por defecto (CDMX) si no se obtiene ubicación
   center: google.maps.LatLngLiteral = { lat: 19.4326, lng: -99.1332 };
@@ -122,7 +122,7 @@ export class Tab1Page implements AfterViewInit {
   selectCategory(id: string) {
     if (this.selectedCategory === id) return;
     this.selectedCategory = id;
-    this.animateSearch();
+    this.results = [];
     this.searchNearby();
   }
 
@@ -307,17 +307,6 @@ export class Tab1Page implements AfterViewInit {
     this.imageLoading[index] = false;
     this.imageError[index] = true;
     // Podría intentarse reintentar con menor resolución si se quisiera
-  }
-
-  // Pequeña animación de carga al cambiar de categoría
-  private animateSearch() {
-    // Simulate a short loading to trigger skeletons
-    this.isLoading = true;
-    this.results = [];
-    setTimeout(() => {
-      this.isLoading = false;
-      // keep results empty until APIs are wired
-    }, 800);
   }
 
   // Maneja el input de búsqueda y pide predicciones a Autocomplete
