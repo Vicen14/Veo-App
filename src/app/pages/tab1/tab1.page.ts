@@ -1,5 +1,5 @@
 // Página de Búsqueda (Tab1): integra mapa, filtros y búsquedas con Google Places
-import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, ViewChildren, QueryList } from '@angular/core';
 import {
   IonHeader,
   IonToolbar,
@@ -53,7 +53,9 @@ import { Geolocation } from '@capacitor/geolocation';
 })
 export class Tab1Page implements AfterViewInit {
   @ViewChild('mapEl', { static: false }) mapEl?: ElementRef<HTMLDivElement>;
+  @ViewChildren('placeCard') placeCards?: QueryList<ElementRef>;
   map?: google.maps.Map;
+  infoWindow?: google.maps.InfoWindow;
   googleMarkers: google.maps.Marker[] = [];
   // Estado de UI: categorías de filtros
   categories = [
@@ -114,6 +116,10 @@ export class Tab1Page implements AfterViewInit {
       mapId: undefined,
     });
 
+    this.infoWindow = new google.maps.InfoWindow({
+      disableAutoPan: true, // Evita que el mapa se mueva solo al abrir el popup
+    });
+
     await this.centerOnUserIfPossible();
     await this.searchNearby();
   }
@@ -130,9 +136,29 @@ export class Tab1Page implements AfterViewInit {
   onMarkerClick(index: number) {
     this.activeMarker = index;
     const m = this.googleMarkers[index];
-    if (!m) return;
-    m.setAnimation(google.maps.Animation.BOUNCE);
-    setTimeout(() => m.setAnimation(null), 700);
+    const r = this.results[index];
+    
+    if (m && this.map) {
+      m.setAnimation(google.maps.Animation.BOUNCE);
+      setTimeout(() => m.setAnimation(null), 700);
+
+      // Mostrar InfoWindow con el nombre
+      if (this.infoWindow) {
+        this.infoWindow.setContent(`
+          <div style="padding: 4px; color: #333;">
+            <strong style="font-size: 14px;">${r.name}</strong>
+            <div style="font-size: 12px; color: #666;">${r.rating ? '⭐ ' + r.rating : ''}</div>
+          </div>
+        `);
+        this.infoWindow.open(this.map, m);
+      }
+    }
+
+    // Scroll automático a la tarjeta en la lista
+    const card = this.placeCards?.toArray()[index];
+    if (card) {
+      card.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 
   // Intenta obtener la ubicación actual; en web dispara el prompt del navegador

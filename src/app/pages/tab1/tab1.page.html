@@ -70,7 +70,7 @@
 
     <!-- lista de resultados -->
     <div *ngIf="!isLoading && results.length > 0" class="list">
-      <div class="place-card" *ngFor="let r of results; let i = index" (click)="onMarkerClick(i)" [class.active]="activeMarker === i">
+      <div class="place-card" *ngFor="let r of results; let i = index" (click)="onMarkerClick(i)" [class.active]="activeMarker === i" #placeCard>
         <div class="thumb" [class.loading]="imageLoading[i]" [class.error]="imageError[i]">
           <img [src]="r.photoUrl || fallbackImg" alt="Foto de {{ r.name }}" loading="lazy" (load)="onImgLoad(i)" (error)="onImgError(i)" />
           <div class="img-skeleton" *ngIf="imageLoading[i]"></div>
