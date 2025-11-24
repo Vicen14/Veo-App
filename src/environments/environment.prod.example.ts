@@ -3,10 +3,10 @@ export const environment = {
   production: true,
   // Clave para Maps JavaScript API en producción
   googleMaps: {
-    apiKey: '',
+    apiKey: 'AIzaSyCtRyUN2RZzxMDcqc3aChHhue0x4ACVqt4',
   },
   // Clave separada para Places API (HTTP) en producción
   googlePlaces: {
-    apiKey: '',
+    apiKey: 'AIzaSyAW-LRQDzcRaMQJAP68Xi6wPTbQyQhOEQ4',
   },
 };

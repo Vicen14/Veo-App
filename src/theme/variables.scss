@@ -2,44 +2,52 @@
 // Reference: https://ionicframework.com/docs/theming
 
 :root {
-	// paleta de colores
-	--color-deep: #312C51;
-	--color-mid: #48426D; 
-	--color-sand: #F0C38E; 
-	--color-peach: #F1AA9B; 
-	--color-cloud: #CCD0CF; 
+	// Waze-inspired palette
+	--color-waze-blue: #33CCFF;
+	--color-waze-dark: #202124;
+	--color-waze-light: #F2F4F7;
+	--color-waze-white: #FFFFFF;
+	--color-waze-yellow: #FFD300;
+	--color-waze-red: #FF5C5C;
+
+	// Mapping old variables to new palette
+	--color-deep: var(--color-waze-dark);
+	--color-mid: #4A90E2;
+	--color-sand: var(--color-waze-yellow);
+	--color-peach: var(--color-waze-red);
+	--color-cloud: #DDE1E7;
 
 	
-	--ion-color-primary: var(--color-deep);
-	--ion-color-primary-rgb: 49, 44, 81;
-	--ion-color-primary-contrast: #ffffff;
-	--ion-color-primary-contrast-rgb: 255, 255, 255;
-	--ion-color-primary-shade: #2b2747;
-	--ion-color-primary-tint: #3f3963;
+	--ion-color-primary: var(--color-waze-blue);
+	--ion-color-primary-rgb: 51, 204, 255;
+	--ion-color-primary-contrast: #000000;
+	--ion-color-primary-contrast-rgb: 0, 0, 0;
+	--ion-color-primary-shade: #2db4e0;
+	--ion-color-primary-tint: #47d1ff;
 
 	--ion-color-secondary: var(--color-mid);
-	--ion-color-secondary-rgb: 72, 66, 109;
+	--ion-color-secondary-rgb: 74, 144, 226;
 	--ion-color-secondary-contrast: #ffffff;
 	--ion-color-secondary-contrast-rgb: 255, 255, 255;
-	--ion-color-secondary-shade: #403b61;
-	--ion-color-secondary-tint: #5b5480;
+	--ion-color-secondary-shade: #417fc7;
+	--ion-color-secondary-tint: #5c9be5;
 
 	--ion-color-tertiary: var(--color-sand);
-	--ion-color-tertiary-rgb: 240, 195, 142;
-	--ion-color-tertiary-contrast: #312C51;
-	--ion-color-tertiary-contrast-rgb: 49, 44, 81;
-	--ion-color-tertiary-shade: #d3aa7d;
-	--ion-color-tertiary-tint: #f2cda2;
+	--ion-color-tertiary-rgb: 255, 211, 0;
+	--ion-color-tertiary-contrast: #000000;
+	--ion-color-tertiary-contrast-rgb: 0, 0, 0;
+	--ion-color-tertiary-shade: #e0ba00;
+	--ion-color-tertiary-tint: #ffd71a;
 
 	--ion-color-success: #2ecc71;
 	--ion-color-warning: #f39c12;
-	--ion-color-danger: #e74c3c;
+	--ion-color-danger: var(--color-waze-red);
 
 
-	--ion-background-color: #faf9fb;
-	--ion-toolbar-background: var(--color-deep);
-	--ion-tab-bar-background: var(--color-deep);
-	--ion-text-color: #1a1a1a;
+	--ion-background-color: var(--color-waze-light);
+	--ion-toolbar-background: var(--color-waze-white);
+	--ion-tab-bar-background: var(--color-waze-white);
+	--ion-text-color: var(--color-waze-dark);
 }
 
 
