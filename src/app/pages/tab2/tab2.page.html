@@ -1,9 +1,71 @@
 <ion-header>
   <ion-toolbar color="primary">
-    <ion-title>Buscar</ion-title>
+    <ion-title>Base de datos</ion-title>
   </ion-toolbar>
-  </ion-header>
+</ion-header>
 
-<ion-content>
-  <div style="padding:16px">Pantalla de búsqueda (placeholder).</div>
+<ion-content class="ion-padding">
+  <section class="db-state" *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+    <ion-text>Cargando base de datos…</ion-text>
+  </section>
+
+  <ion-text color="danger" *ngIf="!loading && errorMessage">{{ errorMessage }}</ion-text>
+
+  <form (ngSubmit)="onSubmit()" novalidate>
+    <ion-item>
+      <ion-label position="floating">Nombre del lugar</ion-label>
+      <ion-input
+        name="venueName"
+        [(ngModel)]="form.name"
+        autocomplete="off"
+        required
+        [disabled]="saving"
+      ></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="floating">Descripción (opcional)</ion-label>
+      <ion-textarea
+        name="venueDescription"
+        auto-grow="true"
+        [(ngModel)]="form.description"
+        [disabled]="saving"
+      ></ion-textarea>
+    </ion-item>
+
+    <ion-button
+      expand="block"
+      class="ion-margin-top"
+      type="submit"
+      [disabled]="saving"
+    >
+      {{ saving ? 'Guardando…' : 'Guardar lugar' }}
+    </ion-button>
+  </form>
+
+  <ion-button
+    expand="block"
+    fill="outline"
+    color="medium"
+    class="ion-margin-top"
+    [disabled]="saving || !venues.length"
+    (click)="onClear()"
+  >
+    Limpiar registros
+  </ion-button>
+
+  <ion-list *ngIf="!loading && venues.length">
+    <ion-item *ngFor="let venue of venues">
+      <ion-label>
+        <h2>{{ venue.name }}</h2>
+        <p *ngIf="venue.description">{{ venue.description }}</p>
+        <p class="timestamp">{{ venue.createdAt | date: 'short' }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <ion-text color="medium" *ngIf="!loading && !venues.length">
+    Aún no hay registros guardados. Agrega uno para empezar.
+  </ion-text>
 </ion-content>
