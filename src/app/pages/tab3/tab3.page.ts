@@ -1,12 +1,72 @@
-import { Component } from '@angular/core';
-import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular/standalone';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonThumbnail,
+  IonIcon,
+  IonButton,
+  IonText
+} from '@ionic/angular/standalone';
+import { AuthService } from '../../services/auth.service';
+import { DatabaseService, Favorite } from '../../services/database.service';
+import { addIcons } from 'ionicons';
+import { trashOutline, star } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tab3',
   templateUrl: 'tab3.page.html',
   styleUrls: ['tab3.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent],
+  imports: [
+    CommonModule,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonList,
+    IonItem,
+    IonLabel,
+    IonThumbnail,
+    IonIcon,
+    IonButton,
+    IonText
+  ],
 })
-export class Tab3Page {
-  constructor() {}
+export class Tab3Page implements OnInit {
+  favorites: Favorite[] = [];
+  fallbackImg = 'assets/icon/icon.png';
+
+  constructor(private auth: AuthService, private db: DatabaseService) {
+    addIcons({ trashOutline, star });
+  }
+
+  ngOnInit() {
+    this.loadFavorites();
+  }
+
+  ionViewWillEnter() {
+    this.loadFavorites();
+  }
+
+  async loadFavorites() {
+    const user = this.auth.currentUserValue;
+    if (user) {
+      this.favorites = await this.db.getFavorites(user.id);
+    } else {
+      this.favorites = [];
+    }
+  }
+
+  async removeFavorite(fav: Favorite) {
+    const user = this.auth.currentUserValue;
+    if (user) {
+      await this.db.removeFavorite(user.id, fav.placeId);
+      this.loadFavorites();
+    }
+  }
 }

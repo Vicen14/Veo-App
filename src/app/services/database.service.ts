@@ -1,17 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Capacitor } from '@capacitor/core';
-import {
-  CapacitorSQLite,
-  SQLiteConnection,
-  SQLiteDBConnection,
-} from '@capacitor-community/sqlite';
-
-interface VenueRecord {
-  id: number;
-  name: string;
-  description: string | null;
-  created_at: number;
-}
+import { Preferences } from '@capacitor/preferences';
 
 export interface Venue {
   id: number;
@@ -20,149 +8,188 @@ export interface Venue {
   createdAt: Date;
 }
 
-/**
- * Encapsula el manejo de la base de datos SQLite para la aplicación.
- */
+export interface User {
+  id: number;
+  email: string;
+  password?: string; // Optional in interface but required in storage
+  name?: string;
+  created_at?: number;
+}
+
+export interface Favorite {
+  id: number;
+  userId: number;
+  placeId: string;
+  name: string;
+  address?: string;
+  photoUrl?: string;
+  rating?: number;
+  createdAt: Date;
+}
+
 @Injectable({ providedIn: 'root' })
 export class DatabaseService {
-  private sqlite?: SQLiteConnection;
-  private connection?: SQLiteDBConnection;
-  private isReady = false;
-  private readonly dbName = 'veo.db';
+  private readonly USERS_KEY = 'users';
+  private readonly VENUES_KEY = 'venues';
+  private readonly FAVORITES_KEY = 'favorites';
 
-  /**
-   * Inicializa la base de datos y crea las tablas necesarias.
-   */
+  constructor() {}
+
   async initialize(): Promise<void> {
-    if (this.isReady) {
-      return;
-    }
-
-    const sqlite = await this.preparePlugin();
-
-    try {
-      await sqlite.checkConnectionsConsistency();
-    } catch (error: unknown) {
-      console.warn('No se pudo validar consistencia de conexiones SQLite', error);
-    }
-
-    this.connection = await this.ensureConnection(sqlite);
-
-    const isOpen = await this.connection.isDBOpen();
-    if (!isOpen.result) {
-      await this.connection.open();
-    }
-
-    await this.connection.execute(`
-      CREATE TABLE IF NOT EXISTS venues (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        description TEXT,
-        created_at INTEGER NOT NULL
-      );
-    `);
-
-    await this.persistToStoreIfNeeded(sqlite);
-
-    this.isReady = true;
+    // No initialization needed for Preferences, but keeping method for compatibility
+    return Promise.resolve();
   }
 
-  /**
-   * Inserta un nuevo venue en la tabla.
-   */
+  // --- HELPERS ---
+
+  private async getData<T>(key: string): Promise<T[]> {
+    const { value } = await Preferences.get({ key });
+    return value ? JSON.parse(value) : [];
+  }
+
+  private async setData<T>(key: string, data: T[]): Promise<void> {
+    await Preferences.set({ key, value: JSON.stringify(data) });
+  }
+
+  // --- VENUES ---
+
   async addVenue(name: string, description: string): Promise<void> {
-    await this.ensureReady();
-    const statement = `
-      INSERT INTO venues (name, description, created_at)
-      VALUES (?, ?, ?);
-    `;
-    await this.connection!.run(statement, [name, description, Date.now()]);
-    if (this.sqlite) {
-      await this.persistToStoreIfNeeded(this.sqlite);
-    }
+    const venues = await this.getData<any>(this.VENUES_KEY);
+    const newVenue = {
+      id: Date.now(), // Simple ID generation
+      name,
+      description,
+      created_at: Date.now()
+    };
+    venues.push(newVenue);
+    await this.setData(this.VENUES_KEY, venues);
   }
 
-  /**
-   * Obtiene todos los venues ordenados por fecha de creación descendente.
-   */
   async getVenues(): Promise<Venue[]> {
-    await this.ensureReady();
-    const result = await this.connection!.query('SELECT * FROM venues ORDER BY created_at DESC;');
-    const rows = (result.values ?? []) as VenueRecord[];
-    return rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      description: row.description ?? undefined,
-      createdAt: new Date(row.created_at),
+    const venues = await this.getData<any>(this.VENUES_KEY);
+    return venues.map(v => ({
+      id: v.id,
+      name: v.name,
+      description: v.description,
+      createdAt: new Date(v.created_at)
+    })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async clearVenues(): Promise<void> {
+    await Preferences.remove({ key: this.VENUES_KEY });
+  }
+
+  // --- USERS ---
+
+  async createUser(email: string, password: string, name: string): Promise<number> {
+    const users = await this.getData<User>(this.USERS_KEY);
+    
+    if (users.find(u => u.email === email)) {
+      throw new Error('User already exists');
+    }
+
+    const newUser: User = {
+      id: Date.now(),
+      email,
+      password,
+      name,
+      created_at: Date.now()
+    };
+
+    users.push(newUser);
+    await this.setData(this.USERS_KEY, users);
+    return newUser.id;
+  }
+
+  async getUserByEmail(email: string): Promise<{ id: number; email: string; password: string; name: string } | null> {
+    const users = await this.getData<any>(this.USERS_KEY);
+    const user = users.find(u => u.email === email);
+    return user || null;
+  }
+
+  async getUsers(): Promise<User[]> {
+    const users = await this.getData<User>(this.USERS_KEY);
+    return users.map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name
     }));
   }
 
-  /**
-   * Elimina todos los registros (útil durante las pruebas).
-   */
-  async clearVenues(): Promise<void> {
-    await this.ensureReady();
-    await this.connection!.execute('DELETE FROM venues;');
-    if (this.sqlite) {
-      await this.persistToStoreIfNeeded(this.sqlite);
+  async updateUser(id: number, name: string): Promise<void> {
+    const users = await this.getData<User>(this.USERS_KEY);
+    const index = users.findIndex(u => u.id === id);
+    if (index !== -1) {
+      users[index].name = name;
+      await this.setData(this.USERS_KEY, users);
     }
   }
 
-  private async ensureReady(): Promise<void> {
-    if (!this.isReady) {
-      await this.initialize();
+  async updateUserPassword(email: string, password: string): Promise<void> {
+    const users = await this.getData<User>(this.USERS_KEY);
+    const index = users.findIndex(u => u.email === email);
+    if (index !== -1) {
+      users[index].password = password;
+      await this.setData(this.USERS_KEY, users);
     }
   }
 
-  private async preparePlugin(): Promise<SQLiteConnection> {
-    const sqlite = await this.ensureSQLiteInstance();
-    const platform = Capacitor.getPlatform();
-    if (platform === 'web') {
-      await this.setupWebStore(sqlite);
-    }
-    return sqlite;
+  async deleteUser(id: number): Promise<void> {
+    let users = await this.getData<User>(this.USERS_KEY);
+    users = users.filter(u => u.id !== id);
+    await this.setData(this.USERS_KEY, users);
   }
 
-  private async setupWebStore(sqlite: SQLiteConnection): Promise<void> {
-    if (!customElements.get('jeep-sqlite')) {
-      // Asegura que el elemento web esté adjunto al DOM antes de inicializar el store.
-      const jeepEl = document.createElement('jeep-sqlite');
-      document.body.appendChild(jeepEl);
-      await customElements.whenDefined('jeep-sqlite');
-    }
+  // --- FAVORITES ---
 
-    await sqlite.initWebStore();
-  }
-
-  private async ensureSQLiteInstance(): Promise<SQLiteConnection> {
-    if (!this.sqlite) {
-      this.sqlite = new SQLiteConnection(CapacitorSQLite);
-    }
-    return this.sqlite;
-  }
-
-  private async ensureConnection(sqlite: SQLiteConnection): Promise<SQLiteDBConnection> {
-    if (this.connection) {
-      return this.connection;
-    }
-
-    try {
-      this.connection = await sqlite.retrieveConnection(this.dbName, false);
-    } catch {
-      this.connection = await sqlite.createConnection(this.dbName, false, 'no-encryption', 1, false);
-    }
-
-    return this.connection;
-  }
-
-  private async persistToStoreIfNeeded(sqlite: SQLiteConnection): Promise<void> {
-    if (Capacitor.getPlatform() !== 'web') {
+  async addFavorite(userId: number, place: { id: string; name: string; address?: string; photoUrl?: string; rating?: number }): Promise<void> {
+    const favorites = await this.getData<any>(this.FAVORITES_KEY);
+    
+    // Check if already exists
+    if (favorites.some((f: any) => f.user_id === userId && f.place_id === place.id)) {
       return;
     }
-    try {
-      await sqlite.saveToStore(this.dbName);
-    } catch (error: unknown) {
-      console.warn('No se pudo guardar la base de datos en IndexedDB', error);
-    }
+
+    const newFavorite = {
+      id: Date.now(),
+      user_id: userId,
+      place_id: place.id,
+      name: place.name,
+      address: place.address,
+      photo_url: place.photoUrl,
+      rating: place.rating,
+      created_at: Date.now()
+    };
+
+    favorites.push(newFavorite);
+    await this.setData(this.FAVORITES_KEY, favorites);
+  }
+
+  async removeFavorite(userId: number, placeId: string): Promise<void> {
+    let favorites = await this.getData<any>(this.FAVORITES_KEY);
+    favorites = favorites.filter((f: any) => !(f.user_id === userId && f.place_id === placeId));
+    await this.setData(this.FAVORITES_KEY, favorites);
+  }
+
+  async getFavorites(userId: number): Promise<Favorite[]> {
+    const favorites = await this.getData<any>(this.FAVORITES_KEY);
+    return favorites
+      .filter((f: any) => f.user_id === userId)
+      .map((f: any) => ({
+        id: f.id,
+        userId: f.user_id,
+        placeId: f.place_id,
+        name: f.name,
+        address: f.address,
+        photoUrl: f.photo_url,
+        rating: f.rating,
+        createdAt: new Date(f.created_at)
+      }))
+      .sort((a: Favorite, b: Favorite) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async isFavorite(userId: number, placeId: string): Promise<boolean> {
+    const favorites = await this.getData<any>(this.FAVORITES_KEY);
+    return favorites.some((f: any) => f.user_id === userId && f.place_id === placeId);
   }
 }

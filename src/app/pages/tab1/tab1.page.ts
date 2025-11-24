@@ -24,6 +24,8 @@ import {
   locationOutline,
   star,
   timeOutline,
+  heart,
+  heartOutline,
 } from 'ionicons/icons';
 import { CommonModule } from '@angular/common';
 // Loader para cargar Google Maps JavaScript API (el Places lo usaremos vía HTTP con su propia key)
@@ -32,6 +34,8 @@ import { Loader } from '@googlemaps/js-api-loader';
 import { environment } from '../../../environments/environment';
 // Geolocalización del dispositivo/navegador con Capacitor
 import { Geolocation } from '@capacitor/geolocation';
+import { AuthService } from '../../services/auth.service';
+import { DatabaseService } from '../../services/database.service';
 
 @Component({
   selector: 'app-tab1',
@@ -83,8 +87,9 @@ export class Tab1Page implements AfterViewInit {
   imageLoading: boolean[] = [];
   imageError: boolean[] = [];
   fallbackImg = 'assets/icon/icon.png';
+  favoritesSet = new Set<string>();
 
-  constructor() {
+  constructor(private auth: AuthService, private db: DatabaseService) {
     addIcons({
       navigateOutline,
       optionsOutline,
@@ -95,6 +100,8 @@ export class Tab1Page implements AfterViewInit {
       locationOutline,
       star,
       timeOutline,
+      heart,
+      heartOutline,
     });
   }
 
@@ -164,12 +171,12 @@ export class Tab1Page implements AfterViewInit {
   // Intenta obtener la ubicación actual; en web dispara el prompt del navegador
   private async centerOnUserIfPossible() {
     try {
-      // Directly call getCurrentPosition: on web this will trigger the browser prompt
+      // Llama directamente a getCurrentPosition: en web esto activará el prompt del navegador
       const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
       this.center = { lat: position.coords.latitude, lng: position.coords.longitude };
       this.map?.setCenter(this.center);
     } catch (e) {
-      // If denied or unavailable, keep default center; optionally surface a UI message later
+      // Si se deniega o no está disponible, mantener el centro predeterminado; opcionalmente mostrar un mensaje de UI más tarde
       console.warn('Geolocation not available or denied', e);
     }
   }
@@ -178,6 +185,9 @@ export class Tab1Page implements AfterViewInit {
   private async searchNearby() {
     if (!this.map) return;
     this.isLoading = true;
+    
+    await this.loadFavorites();
+
     const queries = this.buildQueries(this.selectedCategory);
 
     const runQuery = async (q: { type?: string; keyword?: string }) => {
@@ -218,6 +228,7 @@ export class Tab1Page implements AfterViewInit {
         openNow: r.currentOpeningHours?.openNow,
         location: loc,
         distanceKm: this.distanceKm(this.center, loc),
+        isFavorite: this.favoritesSet.has(r.id as string),
       };
     }).sort((a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
 
@@ -324,6 +335,41 @@ export class Tab1Page implements AfterViewInit {
       await this.searchNearby();
     } finally {
       (ev.target as HTMLIonRefresherElement)?.complete();
+    }
+  }
+
+  async loadFavorites() {
+    const user = this.auth.currentUserValue;
+    if (user) {
+      const favs = await this.db.getFavorites(user.id);
+      this.favoritesSet = new Set(favs.map(f => f.placeId));
+    } else {
+      this.favoritesSet.clear();
+    }
+  }
+
+  async toggleFavorite(event: Event, place: any) {
+    event.stopPropagation();
+    const user = this.auth.currentUserValue;
+    if (!user) {
+      alert('Debes iniciar sesión para guardar favoritos');
+      return;
+    }
+
+    if (place.isFavorite) {
+      await this.db.removeFavorite(user.id, place.id);
+      place.isFavorite = false;
+      this.favoritesSet.delete(place.id);
+    } else {
+      await this.db.addFavorite(user.id, {
+        id: place.id,
+        name: place.name,
+        address: place.address,
+        photoUrl: place.photoUrl,
+        rating: place.rating
+      });
+      place.isFavorite = true;
+      this.favoritesSet.add(place.id);
     }
   }
 

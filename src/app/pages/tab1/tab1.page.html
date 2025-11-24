@@ -95,6 +95,11 @@
               <span class="distance" *ngIf="r.distanceKm != null">{{ r.distanceKm | number:'1.1-1' }} km</span>
             </div>
           </div>
+          <div class="actions-row" style="margin-top: 8px; display: flex; justify-content: flex-end;">
+            <ion-button fill="clear" size="small" (click)="toggleFavorite($event, r)">
+              <ion-icon [name]="r.isFavorite ? 'heart' : 'heart-outline'" [color]="r.isFavorite ? 'danger' : 'medium'"></ion-icon>
+            </ion-button>
+          </div>
         </div>
       </div>
     </div>

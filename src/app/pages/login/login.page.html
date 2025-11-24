@@ -6,24 +6,30 @@
 
 <ion-content class="ion-padding">
   <div class="login-card">
-    <form (ngSubmit)="onLogin()">
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
       <ion-item>
         <ion-label position="floating">Correo electrónico</ion-label>
-        <ion-input type="email" [(ngModel)]="email" name="email" required></ion-input>
+        <ion-input type="email" formControlName="email"></ion-input>
       </ion-item>
+      <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error-msg">
+        Correo inválido
+      </div>
 
       <ion-item>
         <ion-label position="floating">Contraseña</ion-label>
-        <ion-input type="password" [(ngModel)]="password" name="password" required></ion-input>
+        <ion-input type="password" formControlName="password"></ion-input>
       </ion-item>
+      <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-msg">
+        La contraseña es requerida (min 6 caracteres)
+      </div>
 
       <div class="actions">
-        <ion-button expand="block" color="primary" (click)="onLogin()">Iniciar sesión</ion-button>
-        <ion-button expand="block" fill="clear" routerLink="/register">Registrarse</ion-button>
+        <ion-button expand="block" color="primary" type="submit" [disabled]="loginForm.invalid">Iniciar sesión</ion-button>
+        <ion-button expand="block" fill="clear" routerLink="/registrarse">Registrarse</ion-button>
       </div>
 
       <div class="forgot">
-        <ion-button fill="clear" size="small">¿Olvidaste tu contraseña?</ion-button>
+        <ion-button fill="clear" size="small" routerLink="/olvidaste-tu-contraseña">¿Olvidaste tu contraseña?</ion-button>
       </div>
     </form>
 
@@ -36,10 +42,17 @@
         <ion-icon name="person-outline"></ion-icon>
         <span>Perfil</span>
       </ion-button>
-      <ion-button class="nav-btn" fill="solid" routerLink="/register">
+      <ion-button class="nav-btn" fill="solid" routerLink="/registrarse">
         <ion-icon name="person-add-outline"></ion-icon>
         <span>Registrarse</span>
       </ion-button>
     </div>
   </div>
+
+  <ion-toast
+    [isOpen]="isToastOpen"
+    [message]="toastMessage"
+    [duration]="2000"
+    (didDismiss)="setOpen(false)"
+  ></ion-toast>
 </ion-content>

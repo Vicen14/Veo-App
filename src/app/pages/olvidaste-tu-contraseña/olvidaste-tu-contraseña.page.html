@@ -1,0 +1,49 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Recuperar Contraseña</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="forgot-card">
+    <div *ngIf="step === 'email'">
+      <ion-text color="medium">
+        <p>Ingresa tu correo electrónico para buscar tu cuenta.</p>
+      </ion-text>
+      
+      <ion-item>
+        <ion-label position="floating">Correo electrónico</ion-label>
+        <ion-input type="email" [(ngModel)]="email" name="email" required></ion-input>
+      </ion-item>
+
+      <div class="actions">
+        <ion-button expand="block" color="primary" [disabled]="!email" (click)="verifyEmail()">Continuar</ion-button>
+      </div>
+    </div>
+
+    <div *ngIf="step === 'password'">
+      <ion-text color="medium">
+        <p>Ingresa tu nueva contraseña.</p>
+      </ion-text>
+
+      <ion-item>
+        <ion-label position="floating">Nueva Contraseña</ion-label>
+        <ion-input type="password" [(ngModel)]="newPassword" name="newPassword" required (ionInput)="checkPassword()"></ion-input>
+      </ion-item>
+
+      <div class="password-hint" [class.invalid]="!passwordValid && newPassword">
+        La contraseña debe tener entre 8 y 20 caracteres, contener una mayúscula y un número.
+      </div>
+
+      <div class="actions">
+        <ion-button expand="block" color="primary" [disabled]="!passwordValid" (click)="onReset()">Actualizar Contraseña</ion-button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <ion-button class="nav-btn" fill="clear" routerLink="/login">
+        Volver al inicio de sesión
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

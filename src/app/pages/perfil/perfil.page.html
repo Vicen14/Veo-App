@@ -6,16 +6,28 @@
 
 <ion-content>
   <div class="profile-container">
-    <div class="profile-card">
+    <div class="profile-card" *ngIf="user$ | async as user; else guestTemplate">
       <div class="avatar">👤</div>
-      <h2 class="name text-deep">Tu nombre</h2>
-      <p class="email text-mid">usuario@ejemplo.com</p>
+      <h2 class="name text-deep">{{ user.name }}</h2>
+      <p class="email text-mid">{{ user.email }}</p>
 
       <div class="buttons">
-        <ion-button color="primary" routerLink="/register" expand="block">Editar perfil</ion-button>
-        <ion-button fill="clear" expand="block">Cerrar sesión</ion-button>
+        <ion-button fill="clear" expand="block" (click)="logout()">Cerrar sesión</ion-button>
       </div>
     </div>
+
+    <ng-template #guestTemplate>
+      <div class="profile-card">
+        <div class="avatar">👤</div>
+        <h2 class="name text-deep">Invitado</h2>
+        <p class="email text-mid">Inicia sesión para ver tus datos</p>
+
+        <div class="buttons">
+          <ion-button color="primary" routerLink="/registrarse" expand="block">Registrarse</ion-button>
+          <ion-button color="primary" routerLink="/login" expand="block">Iniciar sesión</ion-button>
+        </div>
+      </div>
+    </ng-template>
   </div>
 </ion-content>
 

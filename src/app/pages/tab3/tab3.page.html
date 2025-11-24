@@ -4,6 +4,30 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <div style="padding:16px">Tus lugares favoritos aparecerán aquí.</div>
+<ion-content class="ion-padding">
+  <div *ngIf="favorites.length === 0" class="empty-state">
+    <ion-text color="medium">
+      <p>No tienes lugares favoritos guardados.</p>
+      <p>Explora y marca tus lugares preferidos con el corazón ❤️</p>
+    </ion-text>
+  </div>
+
+  <ion-list *ngIf="favorites.length > 0">
+    <ion-item *ngFor="let fav of favorites" lines="none" class="fav-item">
+      <ion-thumbnail slot="start">
+        <img [src]="fav.photoUrl || fallbackImg" alt="{{ fav.name }}" />
+      </ion-thumbnail>
+      <ion-label>
+        <h2>{{ fav.name }}</h2>
+        <p>{{ fav.address }}</p>
+        <div class="rating" *ngIf="fav.rating">
+          <ion-icon name="star" color="warning"></ion-icon>
+          <span>{{ fav.rating | number:'1.1-1' }}</span>
+        </div>
+      </ion-label>
+      <ion-button slot="end" fill="clear" color="danger" (click)="removeFavorite(fav)">
+        <ion-icon name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-list>
 </ion-content>
