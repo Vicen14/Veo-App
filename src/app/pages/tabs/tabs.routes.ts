@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { TabsPage } from './tabs.page';
+import { authGuard } from '../../guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -25,6 +26,7 @@ export const routes: Routes = [
         path: 'perfil',
         loadComponent: () =>
           import('../perfil/perfil.page').then((m) => m.PerfilPage),
+        canActivate: [authGuard]
       },
       {
         path: '',

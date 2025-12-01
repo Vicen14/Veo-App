@@ -16,7 +16,7 @@ import {
 import { AuthService } from '../../services/auth.service';
 import { DatabaseService, Favorite } from '../../services/database.service';
 import { addIcons } from 'ionicons';
-import { trashOutline, star } from 'ionicons/icons';
+import { trashOutline, star, heartDislikeOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tab3',
@@ -42,7 +42,7 @@ export class Tab3Page implements OnInit {
   fallbackImg = 'assets/icon/icon.png';
 
   constructor(private auth: AuthService, private db: DatabaseService) {
-    addIcons({ trashOutline, star });
+    addIcons({ trashOutline, star, heartDislikeOutline });
   }
 
   ngOnInit() {

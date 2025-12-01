@@ -104,4 +104,91 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal de Detalle de Lugar (Estilo Google Maps) -->
+  <ion-modal [isOpen]="isModalOpen" [breakpoints]="[0, 0.4, 1]" [initialBreakpoint]="0.4" (didDismiss)="setOpen(false)">
+    <ng-template>
+      <ion-header class="ion-no-border">
+        <ion-toolbar>
+          <ion-title>{{ selectedPlace?.name }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="setOpen(false)">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <div class="place-detail" *ngIf="selectedPlace">
+          <!-- Galería de Imágenes (Horizontal Scroll) -->
+          <div class="photos-scroller" *ngIf="selectedPlace.photoUrls && selectedPlace.photoUrls.length > 0">
+            <div class="photo-item" *ngFor="let url of selectedPlace.photoUrls">
+              <img [src]="url" alt="Foto del lugar" loading="lazy" />
+            </div>
+          </div>
+          <!-- Fallback si no hay fotos -->
+          <div class="detail-image" *ngIf="(!selectedPlace.photoUrls || selectedPlace.photoUrls.length === 0) && selectedPlace.photoUrl">
+            <img [src]="selectedPlace.photoUrl" alt="{{ selectedPlace.name }}" />
+          </div>
+
+          <!-- Cabecera: Nombre y Rating -->
+          <div class="detail-header">
+            <h1>{{ selectedPlace.name }}</h1>
+            <div class="rating-badge" *ngIf="selectedPlace.rating">
+              <ion-icon name="star" color="warning"></ion-icon>
+              <span>{{ selectedPlace.rating }}</span>
+              <span class="count">({{ selectedPlace.userRatingCount }} reseñas)</span>
+            </div>
+          </div>
+
+          <!-- Acciones Rápidas -->
+          <div class="quick-actions">
+            <ion-button fill="outline" shape="round" (click)="toggleFavorite($event, selectedPlace)">
+              <ion-icon slot="start" [name]="selectedPlace.isFavorite ? 'heart' : 'heart-outline'" [color]="selectedPlace.isFavorite ? 'danger' : 'medium'"></ion-icon>
+              {{ selectedPlace.isFavorite ? 'Guardado' : 'Guardar' }}
+            </ion-button>
+            <!-- Botón simulado de navegación -->
+            <ion-button fill="solid" shape="round" color="primary">
+              <ion-icon slot="start" name="navigate-outline"></ion-icon>
+              Cómo llegar
+            </ion-button>
+          </div>
+
+          <hr class="divider" />
+
+          <!-- Información General -->
+          <div class="info-section">
+            <div class="info-item" *ngIf="selectedPlace.address">
+              <ion-icon name="location-outline"></ion-icon>
+              <p>{{ selectedPlace.address }}</p>
+            </div>
+            <div class="info-item">
+              <ion-icon name="time-outline"></ion-icon>
+              <p [class.open]="selectedPlace.openNow" [class.closed]="selectedPlace.openNow === false">
+                {{ selectedPlace.openNow ? 'Abierto ahora' : 'Cerrado' }}
+              </p>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <!-- Descripción -->
+          <div class="description-section" *ngIf="selectedPlace.description">
+            <h3>Descripción</h3>
+            <p>{{ selectedPlace.description }}</p>
+          </div>
+
+          <!-- Servicios (simulado con tipos) -->
+          <div class="services-section" *ngIf="selectedPlace.types?.length">
+            <h3>Servicios y Categorías</h3>
+            <div class="chips-container">
+              <ion-chip *ngFor="let type of selectedPlace.types">
+                <ion-label>{{ type }}</ion-label>
+              </ion-chip>
+            </div>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

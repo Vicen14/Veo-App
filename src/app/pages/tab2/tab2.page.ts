@@ -14,7 +14,10 @@ import {
   IonButton,
   IonSpinner,
   IonText,
+  IonIcon,
 } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { timeOutline, folderOpenOutline } from 'ionicons/icons';
 import { DatabaseService, Venue } from '../../services/database.service';
 
 interface VenueForm {
@@ -41,6 +44,7 @@ interface VenueForm {
     IonButton,
     IonSpinner,
     IonText,
+    IonIcon,
   ]
 })
 export class Tab2Page implements OnInit {
@@ -50,7 +54,9 @@ export class Tab2Page implements OnInit {
   errorMessage?: string;
   form: VenueForm = { name: '', description: '' };
 
-  constructor(private readonly database: DatabaseService) {}
+  constructor(private readonly database: DatabaseService) {
+    addIcons({ timeOutline, folderOpenOutline });
+  }
 
   async ngOnInit(): Promise<void> {
     await this.loadVenues(true);
@@ -103,6 +109,8 @@ export class Tab2Page implements OnInit {
       }
     }
   }
+
+
 
   private stringifyError(error: unknown): string {
     if (error instanceof Error) {

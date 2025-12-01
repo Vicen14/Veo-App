@@ -176,4 +176,168 @@
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+// Estilos para el Modal de Detalle
+ion-modal {
+  --border-radius: 24px 24px 0 0;
+  --box-shadow: 0 -10px 20px rgba(0,0,0,0.1);
+  --background: #ffffff;
+
+  ion-toolbar {
+    --background: #ffffff;
+    --color: var(--color-waze-dark);
+  }
+  ion-content {
+    --background: #ffffff;
+    --color: #333;
+  }
+}
+
+.place-detail {
+  padding-bottom: 32px;
+  background: #ffffff;
+
+  // Galería horizontal
+  .photos-scroller {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 0 4px 16px;
+    margin-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+
+    .photo-item {
+      flex: 0 0 85%;
+      height: 220px;
+      border-radius: 16px;
+      overflow: hidden;
+      scroll-snap-align: center;
+      background-color: #f0f2f5;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+    // Espaciador para que el primer/último item no quede pegado al borde
+    &::after { content: ''; flex: 0 0 4px; }
+  }
+
+  .detail-image {
+    width: 100%;
+    height: 200px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background-color: #f0f2f5; /* Placeholder color */
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .detail-header {
+    margin-bottom: 16px;
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--color-waze-dark);
+    }
+    .rating-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f4f5f8;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #333;
+      .count {
+        color: #888;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .quick-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    ion-button {
+      flex: 1;
+      --box-shadow: none;
+      font-weight: 700;
+      --border-radius: 24px;
+    }
+  }
+
+  .divider {
+    border: 0;
+    height: 1px;
+    background: #eee;
+    margin: 24px 0;
+  }
+
+  .info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    .info-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      color: #555;
+      font-size: 15px;
+      ion-icon {
+        font-size: 20px;
+        color: var(--color-mid);
+        margin-top: 2px;
+      }
+      p { margin: 0; line-height: 1.4; color: #333; }
+      .open { color: #2ecc71; font-weight: 700; }
+      .closed { color: #e74c3c; font-weight: 700; }
+    }
+  }
+
+  .description-section {
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 8px;
+      color: #333;
+    }
+    p {
+      margin: 0;
+      color: #666;
+      line-height: 1.5;
+    }
+  }
+
+  .services-section {
+    margin-top: 24px;
+    h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 12px;
+      color: #333;
+    }
+    .chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      ion-chip {
+        margin: 0;
+        background: #f0f2f5;
+        color: #555;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
 

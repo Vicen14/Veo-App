@@ -13,7 +13,7 @@ const USER_KEY = 'my-auth-user';
   providedIn: 'root'
 })
 export class AuthService {
-  // Cambia esto por tu URL real
+  // cambia esto por tu url real
   private apiUrl = 'https://api.example.com'; 
   
   private _isAuthenticated = new BehaviorSubject<boolean>(false);
@@ -34,7 +34,7 @@ export class AuthService {
     Preferences.get({ key: TOKEN_KEY }).then(token => {
       if (token.value) {
         this._isAuthenticated.next(true);
-        // Try to restore user from preferences
+        // intenta restaurar usuario desde preferencias
         Preferences.get({ key: USER_KEY }).then(user => {
           if (user.value) {
             this._currentUser.next(JSON.parse(user.value));
@@ -56,12 +56,12 @@ export class AuthService {
   }
 
   login(credentials: { email: string, password: string }): Observable<any> {
-    // Intentamos login local
+    // intentamos login local
     return from(this.db.getUserByEmail(credentials.email)).pipe(
       switchMap(user => {
         if (user && user.password === credentials.password) {
-          // Login exitoso localmente
-          const token = 'dummy-jwt-token-' + Date.now(); // Simulamos un token
+          // login exitoso localmente
+          const token = 'dummy-jwt-token-' + Date.now(); // simulamos un token
           const userData: User = { id: user.id, email: user.email, name: user.name };
           
           const saveToken = Preferences.set({ key: TOKEN_KEY, value: token });
@@ -75,7 +75,7 @@ export class AuthService {
             map(() => ({ token, user: userData }))
           );
         } else {
-          // Si no encuentra local o password incorrecto
+          // si no encuentra local o password incorrecto
           return throwError(() => new Error('Credenciales inválidas'));
         }
       })
@@ -83,13 +83,13 @@ export class AuthService {
   }
 
   register(data: { email: string, password: string, name: string }): Observable<any> {
-    // Primero verificamos si existe localmente
+    // primero verificamos si existe localmente
     return from(this.db.getUserByEmail(data.email)).pipe(
       switchMap(existing => {
         if (existing) {
           return throwError(() => new Error('El usuario ya existe'));
         }
-        // Creamos usuario
+        // creamos usuario
         return from(this.db.createUser(data.email, data.password, data.name)).pipe(
           map(id => ({ id, ...data }))
         );

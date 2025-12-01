@@ -1,71 +1,74 @@
-<ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>Base de datos</ion-title>
+<ion-header class="ion-no-border">
+  <ion-toolbar class="top-toolbar">
+    <div class="toolbar-row">
+      <div class="title">Base de Datos</div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <section class="db-state" *ngIf="loading">
-    <ion-spinner name="crescent"></ion-spinner>
-    <ion-text>Cargando base de datos…</ion-text>
-  </section>
+<ion-content>
+  <div class="content-wrapper">
+    <!-- Loading State -->
+    <div class="status-card" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <ion-text>Cargando base de datos…</ion-text>
+    </div>
 
-  <ion-text color="danger" *ngIf="!loading && errorMessage">{{ errorMessage }}</ion-text>
+    <!-- Error State -->
+    <div class="status-card error" *ngIf="!loading && errorMessage">
+      <ion-text color="danger">{{ errorMessage }}</ion-text>
+    </div>
 
-  <form (ngSubmit)="onSubmit()" novalidate>
-    <ion-item>
-      <ion-label position="floating">Nombre del lugar</ion-label>
-      <ion-input
-        name="venueName"
-        [(ngModel)]="form.name"
-        autocomplete="off"
-        required
-        [disabled]="saving"
-      ></ion-input>
-    </ion-item>
+    <!-- Form Card -->
+    <div class="form-card">
+      <h2>Agregar Lugar</h2>
+      <form (ngSubmit)="onSubmit()" novalidate>
+        <div class="input-group">
+          <label>Nombre del lugar</label>
+          <input type="text" name="venueName" [(ngModel)]="form.name" required [disabled]="saving" placeholder="Ej. Casa de Juan">
+        </div>
 
-    <ion-item>
-      <ion-label position="floating">Descripción (opcional)</ion-label>
-      <ion-textarea
-        name="venueDescription"
-        auto-grow="true"
-        [(ngModel)]="form.description"
-        [disabled]="saving"
-      ></ion-textarea>
-    </ion-item>
+        <div class="input-group">
+          <label>Descripción (opcional)</label>
+          <textarea name="venueDescription" [(ngModel)]="form.description" [disabled]="saving" placeholder="Detalles del lugar..."></textarea>
+        </div>
 
-    <ion-button
-      expand="block"
-      class="ion-margin-top"
-      type="submit"
-      [disabled]="saving"
-    >
-      {{ saving ? 'Guardando…' : 'Guardar lugar' }}
+        <ion-button expand="block" class="action-btn" type="submit" [disabled]="saving">
+          {{ saving ? 'Guardando…' : 'Guardar lugar' }}
+        </ion-button>
+      </form>
+    </div>
+
+    <!-- Clear Button -->
+    <ion-button expand="block" fill="clear" color="medium" class="clear-btn" [disabled]="saving || !venues.length" (click)="onClear()">
+      Limpiar registros
     </ion-button>
-  </form>
 
-  <ion-button
-    expand="block"
-    fill="outline"
-    color="medium"
-    class="ion-margin-top"
-    [disabled]="saving || !venues.length"
-    (click)="onClear()"
-  >
-    Limpiar registros
-  </ion-button>
+    <!-- Venues List -->
+    <div class="section-title" *ngIf="venues.length">Lugares Guardados</div>
+    
+    <div class="list-container" *ngIf="!loading && venues.length">
+      <div class="place-card" *ngFor="let venue of venues">
+        <div class="info">
+          <div class="title-row">
+            <h3 class="name">{{ venue.name }}</h3>
+          </div>
+          <p class="desc" *ngIf="venue.description">{{ venue.description }}</p>
+          <div class="meta-row">
+            <div class="meta">
+              <ion-icon name="time-outline"></ion-icon>
+              <span>{{ venue.createdAt | date: 'short' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <ion-list *ngIf="!loading && venues.length">
-    <ion-item *ngFor="let venue of venues">
-      <ion-label>
-        <h2>{{ venue.name }}</h2>
-        <p *ngIf="venue.description">{{ venue.description }}</p>
-        <p class="timestamp">{{ venue.createdAt | date: 'short' }}</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
+    <div class="empty-state" *ngIf="!loading && !venues.length">
+      <ion-icon name="folder-open-outline"></ion-icon>
+      <p>Aún no hay registros guardados.</p>
+    </div>
 
-  <ion-text color="medium" *ngIf="!loading && !venues.length">
-    Aún no hay registros guardados. Agrega uno para empezar.
-  </ion-text>
+
+  </div>
 </ion-content>

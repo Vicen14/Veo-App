@@ -63,8 +63,21 @@ Aplicación híbrida Ionic + Angular para descubrir lugares de entretenimiento c
   - Mapa de Google, chips de categorías, barra de búsqueda con Autocomplete.
   - Resultados desde Places Nearby Search, marcadores y lista ordenada por distancia.
   - Botón “ubicarme” que centra y recarga resultados.
-- `Tab2Page`, `Tab3Page`: placeholders para futuras funcionalidades.
-- `PerfilPage`: pantalla de perfil (placeholder inicial).
+- `Tab2Page` (Base de Datos / API Demo):
+  - Formulario para guardar "Venues" localmente (SQLite/Preferences).
+  - Demo de consumo de API REST (JSONPlaceholder) con manejo de errores y caché offline.
+- `Tab3Page` (Favoritos):
+  - Lista de lugares guardados como favoritos.
+- `PerfilPage`: pantalla de perfil protegida por `AuthGuard`.
+
+## Servicios Implementados
+
+- `ApiService`: Cliente HTTP genérico con caché automática y fallback offline.
+- `StorageService`: Wrapper de persistencia usando Capacitor Preferences (compatible con SQLite en plugins nativos).
+- `DatabaseService`: Gestión de datos de usuario, favoritos y venues.
+- `AuthService`: Manejo de sesión (login/logout) y estado de autenticación.
+- `GeolocationService`: Wrapper para el plugin nativo de geolocalización.
+- `AuthGuard`: Protege rutas (como Perfil) requiriendo autenticación previa.
 
 ## Configuración de claves y entornos
 
@@ -98,6 +111,24 @@ Aplicación híbrida Ionic + Angular para descubrir lugares de entretenimiento c
 - Servicio `places-data.service` para encapsular caché y llamadas a Places.
 - `InfoWindow`/`Modal` de detalle de lugar con fotos y horarios.
 - Manejo completo de estados: permisos denegados, sin red, sin resultados, cuotas.
+
+## Instalación y Ejecución
+
+1. Instalar dependencias:
+   ```bash
+   npm install
+   ```
+2. Configurar entornos (ver sección Configuración de claves).
+3. Ejecutar en navegador:
+   ```bash
+   ionic serve
+   ```
+4. Para probar persistencia y plugins nativos en dispositivo:
+   ```bash
+   ionic cap run android
+   # o
+   ionic cap run ios
+   ```
 
 ---
 

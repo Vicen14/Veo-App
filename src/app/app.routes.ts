@@ -17,4 +17,12 @@ export const routes: Routes = [
     path: '',
     loadChildren: () => import('./pages/tabs/tabs.routes').then((m) => m.routes),
   },
+  {
+    path: 'agregar',
+    loadComponent: () => import('./pages/agregar/agregar.page').then( m => m.AgregarPage)
+  },
+  {
+    path: 'modificar',
+    loadComponent: () => import('./pages/modificar/modificar.page').then( m => m.ModificarPage)
+  },
 ];

@@ -1,4 +1,4 @@
-// Página de Búsqueda (Tab1): integra mapa, filtros y búsquedas con Google Places
+// página de búsqueda: tiene mapa, filtros y búsquedas con google places
 import { Component, ElementRef, ViewChild, AfterViewInit, ViewChildren, QueryList } from '@angular/core';
 import {
   IonHeader,
@@ -11,7 +11,9 @@ import {
   IonLabel,
   IonRefresher,
   IonRefresherContent,
-  
+  IonModal,
+  IonButtons,
+  IonTitle,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -26,16 +28,19 @@ import {
   timeOutline,
   heart,
   heartOutline,
+  closeOutline,
 } from 'ionicons/icons';
 import { CommonModule } from '@angular/common';
-// Loader para cargar Google Maps JavaScript API (el Places lo usaremos vía HTTP con su propia key)
+// loader para cargar google maps javascript api (el places lo usaremos vía http con su propia key)
 import { Loader } from '@googlemaps/js-api-loader';
-// Entornos: claves de API se leen desde environment.ts (ignoradas en git)
+// entornos: claves de api se leen desde environment.ts (ignoradas en git)
 import { environment } from '../../../environments/environment';
-// Geolocalización del dispositivo/navegador con Capacitor
-import { Geolocation } from '@capacitor/geolocation';
+// geolocalización del dispositivo/navegador con capacitor
+import { GeolocationService } from '../../services/geolocation.service';
 import { AuthService } from '../../services/auth.service';
 import { DatabaseService } from '../../services/database.service';
+import { ApiService } from '../../services/api.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-tab1',
@@ -50,9 +55,12 @@ import { DatabaseService } from '../../services/database.service';
     IonButton,
     IonIcon,
     IonChip,
-      IonLabel,
-      IonRefresher,
-      IonRefresherContent,
+    IonLabel,
+    IonRefresher,
+    IonRefresherContent,
+    IonModal,
+    IonButtons,
+    IonTitle,
   ],
 })
 export class Tab1Page implements AfterViewInit {
@@ -61,7 +69,7 @@ export class Tab1Page implements AfterViewInit {
   map?: google.maps.Map;
   infoWindow?: google.maps.InfoWindow;
   googleMarkers: google.maps.Marker[] = [];
-  // Estado de UI: categorías de filtros
+  // estado de ui: categorías de filtros
   categories = [
     { id: 'all', label: 'Todos', icon: 'options-outline' },
     { id: 'cinema', label: 'Cines', icon: 'film-outline' },
@@ -72,24 +80,33 @@ export class Tab1Page implements AfterViewInit {
   ];
   selectedCategory: string = 'all';
 
-  // Centro por defecto (CDMX) si no se obtiene ubicación
-  center: google.maps.LatLngLiteral = { lat: 19.4326, lng: -99.1332 };
+  // centro por defecto (concon) si no se obtiene ubicación
+  center: google.maps.LatLngLiteral = { lat: -32.9167, lng: -71.5167 };
   activeMarker: number | null = null;
   foundCount = 0;
 
-  // Resultados y placeholders de carga
+  // resultados y placeholders de carga
   isLoading = false;
   results: any[] = [];
   skeletons = Array.from({ length: 3 });
-  // Estado de Autocomplete (predicciones de Places HTTP)
+  // estado de autocompletar (predicciones de places http)
   predictions: { placeId: string; description: string }[] = [];
-  // Estado de imágenes (carga / error por índice)
+  // estado de imágenes (carga / error por indice)
   imageLoading: boolean[] = [];
   imageError: boolean[] = [];
   fallbackImg = 'assets/icon/icon.png';
   favoritesSet = new Set<string>();
 
-  constructor(private auth: AuthService, private db: DatabaseService) {
+  // estado del modal
+  isModalOpen = false;
+  selectedPlace: any = null;
+
+  constructor(
+    private auth: AuthService, 
+    private db: DatabaseService, 
+    private geo: GeolocationService,
+    private api: ApiService
+  ) {
     addIcons({
       navigateOutline,
       optionsOutline,
@@ -102,15 +119,16 @@ export class Tab1Page implements AfterViewInit {
       timeOutline,
       heart,
       heartOutline,
+      closeOutline,
     });
   }
 
-  // Inicializa mapas/places, intenta centrar en el usuario y realiza la primera búsqueda
+  // inicializa mapas/places, intenta centrar en el usuario y realiza la primera búsqueda
   async ngAfterViewInit() {
     const loader = new Loader({
       apiKey: environment.googleMaps.apiKey,
       version: 'weekly',
-      // No cargamos 'places' porque usaremos la API HTTP con otra key
+      // no cargamos 'places' porque usaremos la api http con otra key
       libraries: [],
     });
 
@@ -124,14 +142,14 @@ export class Tab1Page implements AfterViewInit {
     });
 
     this.infoWindow = new google.maps.InfoWindow({
-      disableAutoPan: true, // Evita que el mapa se mueva solo al abrir el popup
+      disableAutoPan: true, // evita que el mapa se mueva solo al abrir el popup
     });
 
     await this.centerOnUserIfPossible();
     await this.searchNearby();
   }
 
-  // Cambia de categoría y vuelve a buscar
+  // cambia de categoría y vuelve a buscar
   selectCategory(id: string) {
     if (this.selectedCategory === id) return;
     this.selectedCategory = id;
@@ -139,7 +157,7 @@ export class Tab1Page implements AfterViewInit {
     this.searchNearby();
   }
 
-  // Realza el marcador clicado en el mapa
+  // realza el marcador clicado en el mapa
   onMarkerClick(index: number) {
     this.activeMarker = index;
     const m = this.googleMarkers[index];
@@ -148,40 +166,37 @@ export class Tab1Page implements AfterViewInit {
     if (m && this.map) {
       m.setAnimation(google.maps.Animation.BOUNCE);
       setTimeout(() => m.setAnimation(null), 700);
-
-      // Mostrar InfoWindow con el nombre
-      if (this.infoWindow) {
-        this.infoWindow.setContent(`
-          <div style="padding: 4px; color: #333;">
-            <strong style="font-size: 14px;">${r.name}</strong>
-            <div style="font-size: 12px; color: #666;">${r.rating ? '⭐ ' + r.rating : ''}</div>
-          </div>
-        `);
-        this.infoWindow.open(this.map, m);
-      }
+      
+      // centrar mapa en el marcador
+      this.map.panTo(m.getPosition()!);
     }
 
-    // Scroll automático a la tarjeta en la lista
-    const card = this.placeCards?.toArray()[index];
-    if (card) {
-      card.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // abrir modal con detalles
+    this.selectedPlace = r;
+    this.isModalOpen = true;
+  }
+
+  setOpen(isOpen: boolean) {
+    this.isModalOpen = isOpen;
+    if (!isOpen) {
+      this.selectedPlace = null;
     }
   }
 
-  // Intenta obtener la ubicación actual; en web dispara el prompt del navegador
+  // intenta obtener la ubicación actual; en web dispara el prompt del navegador
   private async centerOnUserIfPossible() {
     try {
-      // Llama directamente a getCurrentPosition: en web esto activará el prompt del navegador
-      const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
+      // llama directamente a getcurrentposition: en web esto activará el prompt del navegador
+      const position = await this.geo.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
       this.center = { lat: position.coords.latitude, lng: position.coords.longitude };
       this.map?.setCenter(this.center);
     } catch (e) {
-      // Si se deniega o no está disponible, mantener el centro predeterminado; opcionalmente mostrar un mensaje de UI más tarde
+      // si se deniega o no está disponible, mantener el centro predeterminado; opcionalmente mostrar un mensaje de ui más tarde
       console.warn('Geolocation not available or denied', e);
     }
   }
 
-  // Ejecuta Nearby Search según la categoría seleccionada y deduplica/ordena por distancia
+  // ejecuta nearby search según la categoría seleccionada y deduplica/ordena por distancia
   private async searchNearby() {
     if (!this.map) return;
     this.isLoading = true;
@@ -192,10 +207,10 @@ export class Tab1Page implements AfterViewInit {
 
     const runQuery = async (q: { type?: string; keyword?: string }) => {
       if (q.type) {
-        return await this.placesSearchNearbyByType(q.type);
+        return await firstValueFrom(this.api.searchNearbyByType(this.center.lat, this.center.lng, 5000, q.type));
       }
       if (q.keyword) {
-        return await this.placesSearchText(q.keyword);
+        return await firstValueFrom(this.api.searchByText(this.center.lat, this.center.lng, 5000, q.keyword));
       }
       return [] as any[];
     };
@@ -212,7 +227,9 @@ export class Tab1Page implements AfterViewInit {
     this.results = dedup.map((r: any) => {
       const loc = { lat: r.location?.latitude ?? 0, lng: r.location?.longitude ?? 0 };
       const firstPhoto = r.photos?.[0];
-      const photoUrl = firstPhoto ? this.buildPhotoUrl(firstPhoto) : null;
+      const photoUrl = firstPhoto ? this.api.getPhotoUrl(firstPhoto.name) : null;
+      const photoUrls = r.photos?.map((p: any) => this.api.getPhotoUrl(p.name)).filter((u: string | null) => u !== null) ?? [];
+
       const description = r.editorialSummary?.text
         ?? r.primaryTypeDisplayName?.text
         ?? r.formattedAddress
@@ -225,22 +242,24 @@ export class Tab1Page implements AfterViewInit {
         address: r.formattedAddress,
         description,
         photoUrl,
+        photoUrls,
         openNow: r.currentOpeningHours?.openNow,
         location: loc,
         distanceKm: this.distanceKm(this.center, loc),
         isFavorite: this.favoritesSet.has(r.id as string),
+        types: r.types,
       };
     }).sort((a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
 
     this.isLoading = false;
     this.foundCount = this.results.length;
-    // Inicializa estados de carga de imágenes
+    // inicializa estados de carga de imágenes
     this.imageLoading = this.results.map(() => true);
     this.imageError = this.results.map(() => false);
     this.renderMarkers();
   }
 
-  // Dibuja marcadores en el mapa y agrega listeners de click
+  // dibuja marcadores en el mapa y agrega listeners de click
   private renderMarkers() {
     this.clearMarkers();
     this.googleMarkers = this.results.map((r, i) => new google.maps.Marker({
@@ -258,48 +277,44 @@ export class Tab1Page implements AfterViewInit {
     this.googleMarkers.forEach((m, i) => m.addListener('click', () => this.onMarkerClick(i)));
   }
 
-  // Limpia los marcadores actuales del mapa
+  // limpia los marcadores actuales del mapa
   private clearMarkers() {
     this.googleMarkers.forEach(m => m.setMap(null));
     this.googleMarkers = [];
   }
 
-  // Traduce una categoría a una query de Places (type o keyword)
+  // traduce una categoría a una query de places (type o keyword)
   private buildQueryFromCategory(id: string) {
     switch (id) {
       case 'cinema':
-        return { type: 'movie_theater', keyword: undefined as string | undefined };
+        return { type: 'movie_theater' };
       case 'cyber':
-        return { type: 'internet_cafe', keyword: undefined };
+        return { type: 'internet_cafe' };
       case 'arcade':
-        // Arcades no siempre tienen tipo dedicado, afinamos por keyword
-        return { type: undefined, keyword: 'arcade' };
+        return { type: 'amusement_center' };
       case 'escape':
-        // No existe type oficial, usamos keyword
-        return { type: undefined, keyword: 'escape room' };
+        return { keyword: 'escape room' };
       case 'entertainment':
-        // Lugares de entretenimiento en general (usamos keyword representativa)
-        return { type: undefined, keyword: 'entertainment center' };
+        return { keyword: 'centro de entretenimiento' };
       default:
-        // No default amplio: usa mismo criterio que entretenimiento para evitar “traer todo”
-        return { type: undefined, keyword: 'entertainment center' };
+        return { keyword: 'lugar de entretenimiento' };
     }
   }
 
-  // Construye 1 o N queries (si es "Todos") para Places Nearby Search
+  // construye 1 o n queries (si es "todos") para places nearby search
   private buildQueries(id: string) {
     if (id !== 'all') return [this.buildQueryFromCategory(id)];
-    // Combina los 5 tipos/keywords solicitados
+    // combina los 5 tipos/keywords solicitados
     return [
       { type: 'movie_theater' },
       { type: 'internet_cafe' },
-      { keyword: 'arcade' },
+      { type: 'amusement_center' },
       { keyword: 'escape room' },
-      { keyword: 'entertainment center' },
+      { keyword: 'centro de entretenimiento' },
     ];
   }
 
-  // Distancia Haversine aproximada en km
+  // distancia haversine aproximada en km
   private distanceKm(a: google.maps.LatLngLiteral, b: google.maps.LatLngLiteral) {
     const R = 6371; // km
     const dLat = this.toRad(b.lat - a.lat);
@@ -312,13 +327,13 @@ export class Tab1Page implements AfterViewInit {
 
   private toRad(v: number) { return v * Math.PI / 180; }
 
-  // Acción para "Ver todo" (reservado para futuras vistas de lista completa)
+  // acción para "ver todo" (reservado para futuras vistas de lista completa)
   onSeeAll() {
     
     console.log('Ver todo clicado');
   }
 
-  // Botón "ubicarme": anima, centra y re-ejecuta búsqueda
+  // botón "ubicarme": anima, centra y re-ejecuta búsqueda
   async onLocateClick(ev: Event) {
     const btn = ev.currentTarget as HTMLElement | null;
     if (!btn) return;
@@ -328,7 +343,7 @@ export class Tab1Page implements AfterViewInit {
     await this.searchNearby();
   }
 
-  // Refresher: fuerza nueva búsqueda (y opcionalmente obtiene de nuevo la ubicación)
+  // refresher: fuerza nueva búsqueda (y opcionalmente obtiene de nuevo la ubicación)
   async onRefresh(ev: CustomEvent) {
     try {
       await this.centerOnUserIfPossible();
@@ -373,126 +388,32 @@ export class Tab1Page implements AfterViewInit {
     }
   }
 
-  // Eventos de imagen para manejar skeleton y fallback
+  // eventos de imagen para manejar skeleton y fallback
   onImgLoad(index: number) { this.imageLoading[index] = false; }
   onImgError(index: number) {
     this.imageLoading[index] = false;
     this.imageError[index] = true;
-    // Podría intentarse reintentar con menor resolución si se quisiera
+    // podría intentarse reintentar con menor resolución si se quisiera
   }
 
-  // Maneja el input de búsqueda y pide predicciones a Autocomplete
+  // maneja el input de búsqueda y pide predicciones a autocomplete
   onSearchInput(ev: CustomEvent) {
     const value = (ev as any).detail?.value?.trim();
     if (!value) { this.predictions = []; return; }
-    this.fetchAutocomplete(value).then((preds) => this.predictions = preds).catch(() => this.predictions = []);
+    firstValueFrom(this.api.getAutocomplete(value, this.center.lat, this.center.lng, 5000))
+      .then((preds) => this.predictions = preds)
+      .catch(() => this.predictions = []);
   }
 
-  // Al seleccionar una predicción: centra el mapa en el lugar y busca de nuevo
+  // al seleccionar una predicción: centra el mapa en el lugar y busca de nuevo
   onSelectPrediction(p: { placeId: string; description: string }) {
     if (!this.map) return;
     this.predictions = [];
-    this.fetchPlaceDetails(p.placeId).then((loc) => {
+    firstValueFrom(this.api.getPlaceDetails(p.placeId)).then((loc) => {
       if (!loc) return;
       this.center = loc;
       this.map!.setCenter(this.center);
       this.searchNearby();
     });
-  }
-
-  // ===========================
-  // Integraciones con Places API (HTTP) usando environment.googlePlaces.apiKey
-  // ===========================
-
-  private get placesHeaders() {
-    return {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': environment.googlePlaces.apiKey,
-    } as Record<string, string>;
-  }
-
-  private async placesSearchNearbyByType(type: string) {
-    const url = 'https://places.googleapis.com/v1/places:searchNearby';
-    const body = {
-      languageCode: 'es',
-      maxResultCount: 20,
-      locationRestriction: {
-        circle: {
-          center: { latitude: this.center.lat, longitude: this.center.lng },
-          radius: 3000,
-        }
-      },
-      includedTypes: [type],
-    };
-    const headers = { ...this.placesHeaders, 'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.userRatingCount,places.formattedAddress,places.location,places.currentOpeningHours.openNow,places.photos,places.editorialSummary,places.primaryTypeDisplayName,places.types' };
-    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.places ?? []) as any[];
-  }
-
-  private async placesSearchText(keyword: string) {
-    const url = 'https://places.googleapis.com/v1/places:searchText';
-    const body = {
-      textQuery: keyword,
-      languageCode: 'es',
-      maxResultCount: 20,
-      locationBias: {
-        circle: {
-          center: { latitude: this.center.lat, longitude: this.center.lng },
-          radius: 3000,
-        }
-      },
-    };
-    const headers = { ...this.placesHeaders, 'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.userRatingCount,places.formattedAddress,places.location,places.currentOpeningHours.openNow,places.photos,places.editorialSummary,places.primaryTypeDisplayName,places.types' };
-    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.places ?? []) as any[];
-  }
-
-  private async fetchAutocomplete(input: string) {
-    const url = 'https://places.googleapis.com/v1/places:autocomplete';
-    const body = {
-      input,
-      languageCode: 'es',
-      locationBias: {
-        circle: {
-          center: { latitude: this.center.lat, longitude: this.center.lng },
-          radius: 5000,
-        }
-      },
-      includedPrimaryTypes: ['establishment'],
-    } as any;
-    const headers = { ...this.placesHeaders, 'X-Goog-FieldMask': 'suggestions.placePrediction.placeId,suggestions.placePrediction.text' };
-    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-    if (!res.ok) return [] as { placeId: string; description: string }[];
-    const data = await res.json();
-    const suggestions = (data.suggestions ?? []) as any[];
-    return suggestions
-      .map((s) => s.placePrediction)
-      .filter(Boolean)
-      .map((p: any) => ({ placeId: p.placeId as string, description: (p.text?.text ?? '') as string }));
-  }
-
-  private async fetchPlaceDetails(placeId: string) {
-    const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`;
-    const headers = { ...this.placesHeaders, 'X-Goog-FieldMask': 'id,displayName,location' };
-    const res = await fetch(url, { headers });
-    if (!res.ok) return null as google.maps.LatLngLiteral | null;
-    const data = await res.json();
-    const lat = data.location?.latitude;
-    const lng = data.location?.longitude;
-    if (typeof lat === 'number' && typeof lng === 'number') return { lat, lng } as google.maps.LatLngLiteral;
-    return null;
-  }
-
-  // Construye URL pública de la foto (Places API v1 media endpoint)
-  private buildPhotoUrl(photo: any) {
-    const name = photo?.name; // Ej: "places/XYZ/photos/ABC"
-    if (!name) return null;
-    const maxDim = 400; // tamaño razonable para tarjeta
-    // Se puede usar header X-Goog-Api-Key pero para <img> es más simple el query param key
-    return `https://places.googleapis.com/v1/${encodeURIComponent(name)}/media?maxWidthPx=${maxDim}&maxHeightPx=${maxDim}&key=${environment.googlePlaces.apiKey}`;
   }
 }
