@@ -1,7 +1,7 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="top-toolbar">
     <div class="toolbar-row">
-      <div class="title">Base de Datos</div>
+      <div class="title">Mis lugares</div>
     </div>
   </ion-toolbar>
 </ion-header>
@@ -33,6 +33,16 @@
           <textarea name="venueDescription" [(ngModel)]="form.description" [disabled]="saving" placeholder="Detalles del lugar..."></textarea>
         </div>
 
+        <div class="input-group">
+          <label>Dirección (opcional)</label>
+          <input #addressInput type="text" name="venueAddress" [(ngModel)]="form.address" [disabled]="saving" placeholder="Ej. Av. Libertador 123" (blur)="onAddressChange()">
+        </div>
+
+        <!-- Map Container -->
+        <div class="map-container" [style.display]="form.address ? 'block' : 'none'">
+          <div #mapEl class="map"></div>
+        </div>
+
         <ion-button expand="block" class="action-btn" type="submit" [disabled]="saving">
           {{ saving ? 'Guardando…' : 'Guardar lugar' }}
         </ion-button>
@@ -54,12 +64,21 @@
             <h3 class="name">{{ venue.name }}</h3>
           </div>
           <p class="desc" *ngIf="venue.description">{{ venue.description }}</p>
+          <p class="desc address" *ngIf="venue.address">
+            <ion-icon name="location-outline"></ion-icon>
+            {{ venue.address }}
+          </p>
           <div class="meta-row">
             <div class="meta">
               <ion-icon name="time-outline"></ion-icon>
               <span>{{ venue.createdAt | date: 'short' }}</span>
             </div>
           </div>
+        </div>
+        <div class="actions">
+          <ion-button fill="clear" color="danger" (click)="onDelete(venue.id)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
         </div>
       </div>
     </div>

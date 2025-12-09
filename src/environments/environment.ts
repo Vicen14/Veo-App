@@ -6,7 +6,7 @@ export const environment = {
   production: false,
   // clave única para Maps JavaScript API + Places (no subir este archivo; está en .gitignore)
   googleMaps: {
-    apiKey: 'AIzaSyCtRyUN2RZzxMDcqc3aChHhue0x4ACVqt4',
+    apiKey: 'AIzaSyAW-LRQDzcRaMQJAP68Xi6wPTbQyQhOEQ4',
   },
   // Clave para Places API (HTTP) si decides separarla de la de Maps
   googlePlaces: {

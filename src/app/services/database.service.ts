@@ -7,6 +7,9 @@ export interface Venue {
   id: number;
   name: string;
   description?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
   createdAt: Date;
 }
 
@@ -79,11 +82,27 @@ export class DatabaseService {
     await this.db.executeSql(`
       CREATE TABLE IF NOT EXISTS venues (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
         name TEXT,
         description TEXT,
-        created_at INTEGER
+        address TEXT,
+        lat REAL,
+        lng REAL,
+        created_at INTEGER,
+        FOREIGN KEY(user_id) REFERENCES users(id)
       )
     `, []);
+    
+    // Attempt to add columns if they don't exist
+    try {
+      await this.db.executeSql('ALTER TABLE venues ADD COLUMN address TEXT', []);
+    } catch (e) {}
+    try {
+      await this.db.executeSql('ALTER TABLE venues ADD COLUMN lat REAL', []);
+    } catch (e) {}
+    try {
+      await this.db.executeSql('ALTER TABLE venues ADD COLUMN lng REAL', []);
+    } catch (e) {}
 
     await this.db.executeSql(`
       CREATE TABLE IF NOT EXISTS favorites (
@@ -113,33 +132,38 @@ export class DatabaseService {
 
   // --- venues ---
 
-  async addVenue(name: string, description: string): Promise<void> {
+  async addVenue(userId: number, name: string, description: string, address?: string, lat?: number, lng?: number): Promise<void> {
     const createdAt = Date.now();
     if (this.isWeb) {
       const venues = await this.getPrefs<any>(this.VENUES_KEY);
-      venues.push({ id: Date.now(), name, description, created_at: createdAt });
+      venues.push({ id: Date.now(), user_id: userId, name, description, address, lat, lng, created_at: createdAt });
       await this.setPrefs(this.VENUES_KEY, venues);
     } else {
       if (!this.db) return;
       await this.db.executeSql(
-        'INSERT INTO venues (name, description, created_at) VALUES (?, ?, ?)',
-        [name, description, createdAt]
+        'INSERT INTO venues (user_id, name, description, address, lat, lng, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, name, description, address || null, lat || null, lng || null, createdAt]
       );
     }
   }
 
-  async getVenues(): Promise<Venue[]> {
+  async getVenues(userId: number): Promise<Venue[]> {
     if (this.isWeb) {
       const venues = await this.getPrefs<any>(this.VENUES_KEY);
-      return venues.map(v => ({
-        id: v.id,
-        name: v.name,
-        description: v.description,
-        createdAt: new Date(v.created_at)
-      })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      return venues
+        .filter(v => v.user_id === userId)
+        .map(v => ({
+          id: v.id,
+          name: v.name,
+          description: v.description,
+          address: v.address,
+          lat: v.lat,
+          lng: v.lng,
+          createdAt: new Date(v.created_at)
+        })).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } else {
       if (!this.db) return [];
-      const res = await this.db.executeSql('SELECT * FROM venues ORDER BY created_at DESC', []);
+      const res = await this.db.executeSql('SELECT * FROM venues WHERE user_id = ? ORDER BY created_at DESC', [userId]);
       const venues: Venue[] = [];
       for (let i = 0; i < res.rows.length; i++) {
         const item = res.rows.item(i);
@@ -147,6 +171,9 @@ export class DatabaseService {
           id: item.id,
           name: item.name,
           description: item.description,
+          address: item.address,
+          lat: item.lat,
+          lng: item.lng,
           createdAt: new Date(item.created_at)
         });
       }
@@ -154,12 +181,25 @@ export class DatabaseService {
     }
   }
 
-  async clearVenues(): Promise<void> {
+  async clearVenues(userId: number): Promise<void> {
     if (this.isWeb) {
-      await Preferences.remove({ key: this.VENUES_KEY });
+      let venues = await this.getPrefs<any>(this.VENUES_KEY);
+      venues = venues.filter(v => v.user_id !== userId);
+      await this.setPrefs(this.VENUES_KEY, venues);
     } else {
       if (!this.db) return;
-      await this.db.executeSql('DELETE FROM venues', []);
+      await this.db.executeSql('DELETE FROM venues WHERE user_id = ?', [userId]);
+    }
+  }
+
+  async deleteVenue(id: number): Promise<void> {
+    if (this.isWeb) {
+      let venues = await this.getPrefs<any>(this.VENUES_KEY);
+      venues = venues.filter(v => v.id !== id);
+      await this.setPrefs(this.VENUES_KEY, venues);
+    } else {
+      if (!this.db) return;
+      await this.db.executeSql('DELETE FROM venues WHERE id = ?', [id]);
     }
   }
 

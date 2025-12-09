@@ -3,15 +3,9 @@ import { CommonModule } from '@angular/common';
 import {
   IonHeader,
   IonToolbar,
-  IonTitle,
   IonContent,
-  IonList,
-  IonItem,
-  IonLabel,
-  IonThumbnail,
   IonIcon,
   IonButton,
-  IonText
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
 import { DatabaseService, Favorite } from '../../services/database.service';
@@ -26,15 +20,9 @@ import { trashOutline, star, heartDislikeOutline } from 'ionicons/icons';
     CommonModule,
     IonHeader,
     IonToolbar,
-    IonTitle,
     IonContent,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonThumbnail,
     IonIcon,
     IonButton,
-    IonText
   ],
 })
 export class Tab3Page implements OnInit {

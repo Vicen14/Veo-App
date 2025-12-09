@@ -39,22 +39,19 @@ export class LoginPage {
   }
 
   onLogin() {
-    if (this.loginForm.valid) {
-      const { email, password } = this.loginForm.value;
-      this.auth.login({ email, password }).subscribe({
-        next: () => {
-          this.router.navigate(['/tabs/tab1']);
-        },
-        error: (err) => {
-          this.toastMessage = 'Error al iniciar sesión. Verifica tus credenciales.';
-          this.isToastOpen = true;
-          console.error(err);
-        }
-      });
-    } else {
-      this.toastMessage = 'Por favor completa el formulario correctamente.';
+    if (!this.loginForm.valid) {
+      this.toastMessage = 'Completa el formulario correctamente.';
       this.isToastOpen = true;
+      return;
     }
+    const { email, password } = this.loginForm.value;
+    this.auth.login({ email, password }).subscribe({
+      next: () => this.router.navigate(['/tabs/tab1'], { replaceUrl: true }),
+      error: () => {
+        this.toastMessage = 'Credenciales inválidas.';
+        this.isToastOpen = true;
+      }
+    });
   }
 
   setOpen(isOpen: boolean) {

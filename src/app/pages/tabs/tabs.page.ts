@@ -6,6 +6,7 @@ import {
   searchOutline,
   heartOutline,
   personOutline,
+  locationOutline,
 } from 'ionicons/icons';
 
 @Component({
@@ -18,6 +19,6 @@ export class TabsPage {
   public environmentInjector = inject(EnvironmentInjector);
 
   constructor() {
-    addIcons({ homeOutline, searchOutline, heartOutline, personOutline });
+    addIcons({ homeOutline, searchOutline, heartOutline, personOutline, locationOutline });
   }
 }

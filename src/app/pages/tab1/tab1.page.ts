@@ -29,6 +29,7 @@ import {
   heart,
   heartOutline,
   closeOutline,
+  personOutline,
 } from 'ionicons/icons';
 import { CommonModule } from '@angular/common';
 // loader para cargar google maps javascript api (el places lo usaremos vía http con su propia key)
@@ -69,9 +70,11 @@ export class Tab1Page implements AfterViewInit {
   map?: google.maps.Map;
   infoWindow?: google.maps.InfoWindow;
   googleMarkers: google.maps.Marker[] = [];
+  userMarkers: google.maps.Marker[] = [];
   // estado de ui: categorías de filtros
   categories = [
     { id: 'all', label: 'Todos', icon: 'options-outline' },
+    { id: 'my-places', label: 'Mis Lugares', icon: 'person-outline' },
     { id: 'cinema', label: 'Cines', icon: 'film-outline' },
     { id: 'arcade', label: 'Arcades', icon: 'game-controller-outline' },
     { id: 'cyber', label: 'Cibercafés', icon: 'cafe-outline' },
@@ -94,7 +97,7 @@ export class Tab1Page implements AfterViewInit {
   // estado de imágenes (carga / error por indice)
   imageLoading: boolean[] = [];
   imageError: boolean[] = [];
-  fallbackImg = 'assets/icon/icon.png';
+  fallbackImg = 'assets/icon/favicon.png';
   favoritesSet = new Set<string>();
 
   // estado del modal
@@ -120,6 +123,7 @@ export class Tab1Page implements AfterViewInit {
       heart,
       heartOutline,
       closeOutline,
+      personOutline,
     });
   }
 
@@ -128,8 +132,7 @@ export class Tab1Page implements AfterViewInit {
     const loader = new Loader({
       apiKey: environment.googleMaps.apiKey,
       version: 'weekly',
-      // no cargamos 'places' porque usaremos la api http con otra key
-      libraries: [],
+      libraries: ['places'],
     });
 
     await loader.load();
@@ -147,6 +150,67 @@ export class Tab1Page implements AfterViewInit {
 
     await this.centerOnUserIfPossible();
     await this.searchNearby();
+    await this.loadUserVenues();
+  }
+
+  ionViewWillEnter() {
+    this.loadUserVenues();
+  }
+
+  async loadUserVenues() {
+    console.log('loadUserVenues called');
+    // Limpiar marcadores anteriores
+    this.userMarkers.forEach(marker => marker.setMap(null));
+    this.userMarkers = [];
+
+    if (!this.map) {
+      console.log('Map not initialized yet, skipping loadUserVenues');
+      return;
+    }
+
+    try {
+      const user = await firstValueFrom(this.auth.currentUser$);
+      if (user) {
+        const venues = await this.db.getVenues(user.id);
+        console.log('Venues loaded:', venues);
+        venues.forEach(venue => {
+          console.log('Processing venue:', venue);
+          if (venue.lat && venue.lng) {
+            console.log('Adding marker for venue:', venue.name, venue.lat, venue.lng);
+            const marker = new google.maps.Marker({
+              position: { lat: venue.lat, lng: venue.lng },
+              map: this.map,
+              title: venue.name,
+              icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 8,
+                fillColor: 'green',
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: 'white',
+              },
+            });
+
+            marker.addListener('click', () => {
+              this.infoWindow?.setContent(`
+                <div style="padding: 8px;">
+                  <h3 style="margin: 0 0 4px; font-size: 16px; font-weight: 600;">${venue.name}</h3>
+                  <p style="margin: 0; font-size: 14px; color: #666;">${venue.description || ''}</p>
+                  <p style="margin: 4px 0 0; font-size: 12px; color: #888;">${venue.address || ''}</p>
+                </div>
+              `);
+              this.infoWindow?.open(this.map, marker);
+            });
+
+            this.userMarkers.push(marker);
+          } else {
+            console.warn('Venue missing lat/lng:', venue);
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Error loading user venues', e);
+    }
   }
 
   // cambia de categoría y vuelve a buscar
@@ -203,6 +267,44 @@ export class Tab1Page implements AfterViewInit {
     
     try {
       await this.loadFavorites();
+
+      if (this.selectedCategory === 'my-places') {
+        this.userMarkers.forEach(m => m.setMap(null));
+        this.userMarkers = [];
+
+        const user = await firstValueFrom(this.auth.currentUser$);
+        if (user) {
+          const venues = await this.db.getVenues(user.id);
+          this.results = venues.map((v: any) => ({
+            id: v.id,
+            name: v.name,
+            rating: null,
+            userRatingCount: null,
+            address: v.address,
+            description: v.description,
+            photoUrl: v.image || null,
+            photoUrls: v.image ? [v.image] : [],
+            openNow: null,
+            location: { lat: v.lat, lng: v.lng },
+            distanceKm: v.lat && v.lng ? this.distanceKm(this.center, { lat: v.lat, lng: v.lng }) : 0,
+            isFavorite: false,
+            types: ['user_place']
+          })).sort((a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+        } else {
+          this.results = [];
+        }
+        
+        this.foundCount = this.results.length;
+        this.imageLoading = this.results.map(() => true);
+        this.imageError = this.results.map(() => false);
+        this.renderMarkers();
+        this.isLoading = false;
+        return;
+      }
+
+      if (this.userMarkers.length === 0) {
+        this.loadUserVenues();
+      }
 
       const queries = this.buildQueries(this.selectedCategory);
 

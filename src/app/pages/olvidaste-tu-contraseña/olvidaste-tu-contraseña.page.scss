@@ -1,14 +1,36 @@
+/* Waze-like clean background */
+ion-content {
+  --background: var(--color-waze-light);
+}
+
 .forgot-card {
+  background: #ffffff;
+  padding: 24px;
+  margin: 24px 16px;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   max-width: 400px;
-  margin: 2rem auto;
-  padding: 1rem;
-  background: var(--ion-card-background, #fff);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Inputs styling override */
+ion-item {
+  --background: #f8f9fa;
+  --border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: none;
+  border: 1px solid #e9ecef;
+  --color: #000000;
+}
+
+ion-button {
+  margin-bottom: 12px;
+  font-weight: 800;
 }
 
 .actions {
-  margin-top: 1.5rem;
+  margin-top: 24px;
 }
 
 .nav-row {
@@ -22,6 +44,7 @@
   color: var(--ion-color-medium);
   margin-top: 0.5rem;
   padding: 0 1rem;
+  margin-bottom: 1rem;
 
   &.invalid {
     color: var(--ion-color-danger);
