@@ -196,67 +196,72 @@ export class Tab1Page implements AfterViewInit {
     }
   }
 
-  // ejecuta nearby search según la categoría seleccionada y deduplica/ordena por distancia
+  // ejecuta nearby search segun la categoria seleccionada y ordena por distancia
   private async searchNearby() {
     if (!this.map) return;
     this.isLoading = true;
     
-    await this.loadFavorites();
+    try {
+      await this.loadFavorites();
 
-    const queries = this.buildQueries(this.selectedCategory);
+      const queries = this.buildQueries(this.selectedCategory);
 
-    const runQuery = async (q: { type?: string; keyword?: string }) => {
-      if (q.type) {
-        return await firstValueFrom(this.api.searchNearbyByType(this.center.lat, this.center.lng, 5000, q.type));
-      }
-      if (q.keyword) {
-        return await firstValueFrom(this.api.searchByText(this.center.lat, this.center.lng, 5000, q.keyword));
-      }
-      return [] as any[];
-    };
-
-    const batches = await Promise.all(queries.map(runQuery));
-    const merged: any[] = ([] as any[]).concat(...batches);
-    const seen = new Set<string>();
-    const dedup = merged.filter((r: any) => {
-      const id = r.id as string;
-      if (seen.has(id)) return false;
-      seen.add(id); return true;
-    });
-
-    this.results = dedup.map((r: any) => {
-      const loc = { lat: r.location?.latitude ?? 0, lng: r.location?.longitude ?? 0 };
-      const firstPhoto = r.photos?.[0];
-      const photoUrl = firstPhoto ? this.api.getPhotoUrl(firstPhoto.name) : null;
-      const photoUrls = r.photos?.map((p: any) => this.api.getPhotoUrl(p.name)).filter((u: string | null) => u !== null) ?? [];
-
-      const description = r.editorialSummary?.text
-        ?? r.primaryTypeDisplayName?.text
-        ?? r.formattedAddress
-        ?? (Array.isArray(r.types) ? r.types.slice(0, 3).join(', ') : '');
-      return {
-        id: r.id as string,
-        name: r.displayName?.text ?? r.displayName ?? 'Lugar',
-        rating: r.rating,
-        userRatingCount: r.userRatingCount,
-        address: r.formattedAddress,
-        description,
-        photoUrl,
-        photoUrls,
-        openNow: r.currentOpeningHours?.openNow,
-        location: loc,
-        distanceKm: this.distanceKm(this.center, loc),
-        isFavorite: this.favoritesSet.has(r.id as string),
-        types: r.types,
+      const runQuery = async (q: { type?: string; keyword?: string }) => {
+        if (q.type) {
+          return await firstValueFrom(this.api.searchNearbyByType(this.center.lat, this.center.lng, 5000, q.type));
+        }
+        if (q.keyword) {
+          return await firstValueFrom(this.api.searchByText(this.center.lat, this.center.lng, 5000, q.keyword));
+        }
+        return [] as any[];
       };
-    }).sort((a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
 
-    this.isLoading = false;
-    this.foundCount = this.results.length;
-    // inicializa estados de carga de imágenes
-    this.imageLoading = this.results.map(() => true);
-    this.imageError = this.results.map(() => false);
-    this.renderMarkers();
+      const batches = await Promise.all(queries.map(runQuery));
+      const merged: any[] = ([] as any[]).concat(...batches);
+      const seen = new Set<string>();
+      const dedup = merged.filter((r: any) => {
+        const id = r.id as string;
+        if (seen.has(id)) return false;
+        seen.add(id); return true;
+      });
+
+      this.results = dedup.map((r: any) => {
+        const loc = { lat: r.location?.latitude ?? 0, lng: r.location?.longitude ?? 0 };
+        const firstPhoto = r.photos?.[0];
+        const photoUrl = firstPhoto ? this.api.getPhotoUrl(firstPhoto.name) : null;
+        const photoUrls = r.photos?.map((p: any) => this.api.getPhotoUrl(p.name)).filter((u: string | null) => u !== null) ?? [];
+
+        const description = r.editorialSummary?.text
+          ?? r.primaryTypeDisplayName?.text
+          ?? r.formattedAddress
+          ?? (Array.isArray(r.types) ? r.types.slice(0, 3).join(', ') : '');
+        return {
+          id: r.id as string,
+          name: r.displayName?.text ?? r.displayName ?? 'Lugar',
+          rating: r.rating,
+          userRatingCount: r.userRatingCount,
+          address: r.formattedAddress,
+          description,
+          photoUrl,
+          photoUrls,
+          openNow: r.currentOpeningHours?.openNow,
+          location: loc,
+          distanceKm: this.distanceKm(this.center, loc),
+          isFavorite: this.favoritesSet.has(r.id as string),
+          types: r.types,
+        };
+      }).sort((a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+
+      this.foundCount = this.results.length;
+      // inicializa estados de carga de imágenes
+      this.imageLoading = this.results.map(() => true);
+      this.imageError = this.results.map(() => false);
+      this.renderMarkers();
+    } catch (error) {
+      console.error('Error in searchNearby:', error);
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   // dibuja marcadores en el mapa y agrega listeners de click
@@ -354,11 +359,16 @@ export class Tab1Page implements AfterViewInit {
   }
 
   async loadFavorites() {
-    const user = this.auth.currentUserValue;
-    if (user) {
-      const favs = await this.db.getFavorites(user.id);
-      this.favoritesSet = new Set(favs.map(f => f.placeId));
-    } else {
+    try {
+      const user = this.auth.currentUserValue;
+      if (user) {
+        const favs = await this.db.getFavorites(user.id);
+        this.favoritesSet = new Set(favs.map(f => f.placeId));
+      } else {
+        this.favoritesSet.clear();
+      }
+    } catch (e) {
+      console.error('Error loading favorites', e);
       this.favoritesSet.clear();
     }
   }
