@@ -21,11 +21,23 @@
 
     <!-- Form Card -->
     <div class="form-card">
-      <h2>Agregar Lugar</h2>
+      <h2>{{ editingVenueId ? 'Editar Lugar' : 'Agregar Lugar' }}</h2>
       <form (ngSubmit)="onSubmit()" novalidate>
         <div class="input-group">
           <label>Nombre del lugar</label>
           <input type="text" name="venueName" [(ngModel)]="form.name" required [disabled]="saving" placeholder="Ej. Casa de Juan">
+        </div>
+
+        <div class="input-group">
+          <label>Tipo de establecimiento</label>
+          <div class="custom-select" (click)="openTypeModal()" [class.disabled]="saving">
+            <div class="selected-value" *ngIf="form.type">
+              <ion-icon [name]="getCategoryIcon(form.type)"></ion-icon>
+              <span>{{ getCategoryLabel(form.type) }}</span>
+            </div>
+            <div class="placeholder" *ngIf="!form.type">Selecciona un tipo</div>
+            <ion-icon name="chevron-down-outline" class="chevron"></ion-icon>
+          </div>
         </div>
 
         <div class="input-group">
@@ -43,9 +55,15 @@
           <div #mapEl class="map"></div>
         </div>
 
-        <ion-button expand="block" class="action-btn" type="submit" [disabled]="saving">
-          {{ saving ? 'Guardando…' : 'Guardar lugar' }}
-        </ion-button>
+        <div class="button-group">
+          <ion-button expand="block" class="action-btn" type="submit" [disabled]="saving">
+            {{ saving ? 'Guardando…' : (editingVenueId ? 'Actualizar lugar' : 'Guardar lugar') }}
+          </ion-button>
+          
+          <ion-button *ngIf="editingVenueId" expand="block" fill="outline" class="cancel-btn" (click)="cancelEdit()" [disabled]="saving">
+            Cancelar
+          </ion-button>
+        </div>
       </form>
     </div>
 
@@ -64,6 +82,10 @@
             <h3 class="name">{{ venue.name }}</h3>
           </div>
           <p class="desc" *ngIf="venue.description">{{ venue.description }}</p>
+          <p class="desc type" *ngIf="venue.type">
+            <ion-icon name="pricetag-outline"></ion-icon>
+            {{ getCategoryLabel(venue.type) }}
+          </p>
           <p class="desc address" *ngIf="venue.address">
             <ion-icon name="location-outline"></ion-icon>
             {{ venue.address }}
@@ -76,6 +98,9 @@
           </div>
         </div>
         <div class="actions">
+          <ion-button fill="clear" color="primary" (click)="onEdit(venue)">
+            <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+          </ion-button>
           <ion-button fill="clear" color="danger" (click)="onDelete(venue.id)">
             <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
           </ion-button>
@@ -90,4 +115,30 @@
 
 
   </div>
+
+  <ion-modal [isOpen]="isTypeModalOpen" (didDismiss)="closeTypeModal()" [initialBreakpoint]="0.5" [breakpoints]="[0, 0.5, 0.75]">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Seleccionar Tipo</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeTypeModal()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <ion-list lines="none">
+          <ion-item button *ngFor="let cat of categories" (click)="selectType(cat.id)" detail="false" class="type-item">
+            <ion-icon [name]="cat.icon" slot="start" color="primary"></ion-icon>
+            <ion-label>
+              <h2>{{ cat.label }}</h2>
+            </ion-label>
+            <ion-icon name="checkmark-circle" slot="end" color="success" *ngIf="form.type === cat.id"></ion-icon>
+          </ion-item>
+        </ion-list>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>
