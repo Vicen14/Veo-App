@@ -8,6 +8,7 @@ export interface Venue {
   name: string;
   description?: string;
   address?: string;
+  type?: string;
   lat?: number;
   lng?: number;
   createdAt: Date;
@@ -86,6 +87,7 @@ export class DatabaseService {
         name TEXT,
         description TEXT,
         address TEXT,
+        type TEXT,
         lat REAL,
         lng REAL,
         created_at INTEGER,
@@ -96,6 +98,9 @@ export class DatabaseService {
     // Attempt to add columns if they don't exist
     try {
       await this.db.executeSql('ALTER TABLE venues ADD COLUMN address TEXT', []);
+    } catch (e) {}
+    try {
+      await this.db.executeSql('ALTER TABLE venues ADD COLUMN type TEXT', []);
     } catch (e) {}
     try {
       await this.db.executeSql('ALTER TABLE venues ADD COLUMN lat REAL', []);
@@ -132,17 +137,34 @@ export class DatabaseService {
 
   // --- venues ---
 
-  async addVenue(userId: number, name: string, description: string, address?: string, lat?: number, lng?: number): Promise<void> {
+  async addVenue(userId: number, name: string, description: string, address?: string, type?: string, lat?: number, lng?: number): Promise<void> {
     const createdAt = Date.now();
     if (this.isWeb) {
       const venues = await this.getPrefs<any>(this.VENUES_KEY);
-      venues.push({ id: Date.now(), user_id: userId, name, description, address, lat, lng, created_at: createdAt });
+      venues.push({ id: Date.now(), user_id: userId, name, description, address, type, lat, lng, created_at: createdAt });
       await this.setPrefs(this.VENUES_KEY, venues);
     } else {
       if (!this.db) return;
       await this.db.executeSql(
-        'INSERT INTO venues (user_id, name, description, address, lat, lng, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [userId, name, description, address || null, lat || null, lng || null, createdAt]
+        'INSERT INTO venues (user_id, name, description, address, type, lat, lng, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [userId, name, description, address || null, type || null, lat || null, lng || null, createdAt]
+      );
+    }
+  }
+
+  async updateVenue(id: number, name: string, description: string, address?: string, type?: string, lat?: number, lng?: number): Promise<void> {
+    if (this.isWeb) {
+      const venues = await this.getPrefs<any>(this.VENUES_KEY);
+      const index = venues.findIndex(v => v.id === id);
+      if (index !== -1) {
+        venues[index] = { ...venues[index], name, description, address, type, lat, lng };
+        await this.setPrefs(this.VENUES_KEY, venues);
+      }
+    } else {
+      if (!this.db) return;
+      await this.db.executeSql(
+        'UPDATE venues SET name = ?, description = ?, address = ?, type = ?, lat = ?, lng = ? WHERE id = ?',
+        [name, description, address || null, type || null, lat || null, lng || null, id]
       );
     }
   }
@@ -157,6 +179,7 @@ export class DatabaseService {
           name: v.name,
           description: v.description,
           address: v.address,
+          type: v.type,
           lat: v.lat,
           lng: v.lng,
           createdAt: new Date(v.created_at)
@@ -172,6 +195,7 @@ export class DatabaseService {
           name: item.name,
           description: item.description,
           address: item.address,
+          type: item.type,
           lat: item.lat,
           lng: item.lng,
           createdAt: new Date(item.created_at)

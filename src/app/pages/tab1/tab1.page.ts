@@ -174,6 +174,11 @@ export class Tab1Page implements AfterViewInit {
         const venues = await this.db.getVenues(user.id);
         console.log('Venues loaded:', venues);
         venues.forEach(venue => {
+          // Filter out 'other' type venues unless we are in 'my-places' mode
+          if (venue.type === 'other' && this.selectedCategory !== 'my-places') {
+            return;
+          }
+
           console.log('Processing venue:', venue);
           if (venue.lat && venue.lng) {
             console.log('Adding marker for venue:', venue.name, venue.lat, venue.lng);
@@ -218,6 +223,11 @@ export class Tab1Page implements AfterViewInit {
     if (this.selectedCategory === id) return;
     this.selectedCategory = id;
     this.results = [];
+    
+    // Clear user markers so they are reloaded with correct filtering
+    this.userMarkers.forEach(m => m.setMap(null));
+    this.userMarkers = [];
+    
     this.searchNearby();
   }
 

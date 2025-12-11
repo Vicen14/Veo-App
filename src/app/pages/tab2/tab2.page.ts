@@ -9,9 +9,32 @@ import {
   IonSpinner,
   IonText,
   IonIcon,
+  IonSelect,
+  IonSelectOption,
+  IonModal,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonButtons,
+  IonTitle,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { timeOutline, folderOpenOutline, locationOutline, trashOutline } from 'ionicons/icons';
+import { 
+  timeOutline, 
+  folderOpenOutline, 
+  locationOutline, 
+  trashOutline,
+  filmOutline,
+  gameControllerOutline,
+  cafeOutline,
+  extensionPuzzleOutline,
+  optionsOutline,
+  pricetagOutline,
+  closeOutline,
+  chevronDownOutline,
+  bookmarkOutline,
+  createOutline
+} from 'ionicons/icons';
 import { DatabaseService, Venue } from '../../services/database.service';
 import { AuthService } from '../../services/auth.service';
 import { firstValueFrom } from 'rxjs';
@@ -22,6 +45,7 @@ interface VenueForm {
   name: string;
   description: string;
   address: string;
+  type: string;
 }
 
 @Component({
@@ -38,6 +62,14 @@ interface VenueForm {
     IonSpinner,
     IonText,
     IonIcon,
+    IonSelect,
+    IonSelectOption,
+    IonModal,
+    IonList,
+    IonItem,
+    IonLabel,
+    IonButtons,
+    IonTitle,
   ]
 })
 export class Tab2Page implements OnInit, AfterViewInit {
@@ -47,17 +79,43 @@ export class Tab2Page implements OnInit, AfterViewInit {
   loading = true;
   saving = false;
   errorMessage?: string;
-  form: VenueForm = { name: '', description: '', address: '' };
+  form: VenueForm = { name: '', description: '', address: '', type: '' };
   map?: google.maps.Map;
   marker?: google.maps.Marker;
   geocoder?: google.maps.Geocoder;
   autocomplete?: google.maps.places.Autocomplete;
+  isTypeModalOpen = false;
+  editingVenueId: number | null = null;
+
+  categories = [
+    { id: 'cinema', label: 'Cines', icon: 'film-outline' },
+    { id: 'arcade', label: 'Arcades', icon: 'game-controller-outline' },
+    { id: 'cyber', label: 'Cibercafés', icon: 'cafe-outline' },
+    { id: 'escape', label: 'Escape', icon: 'extension-puzzle-outline' },
+    { id: 'entertainment', label: 'Entretenimiento', icon: 'options-outline' },
+    { id: 'other', label: 'Otros', icon: 'bookmark-outline' },
+  ];
 
   constructor(
     private readonly database: DatabaseService,
     private readonly auth: AuthService
   ) {
-    addIcons({ timeOutline, folderOpenOutline, locationOutline, trashOutline });
+    addIcons({ 
+      timeOutline, 
+      folderOpenOutline, 
+      locationOutline, 
+      trashOutline,
+      filmOutline,
+      gameControllerOutline,
+      cafeOutline,
+      extensionPuzzleOutline,
+      optionsOutline,
+      pricetagOutline,
+      closeOutline,
+      chevronDownOutline,
+      bookmarkOutline,
+      createOutline
+    });
   }
 
   async ngOnInit(): Promise<void> {
@@ -150,6 +208,7 @@ export class Tab2Page implements OnInit, AfterViewInit {
     const name = this.form.name.trim();
     const description = this.form.description.trim();
     const address = this.form.address.trim();
+    const type = this.form.type;
     
     if (!name) {
       this.errorMessage = 'Por favor ingresa un nombre.';
@@ -180,8 +239,14 @@ export class Tab2Page implements OnInit, AfterViewInit {
           }
         }
 
-        await this.database.addVenue(user.id, name, description, address, lat, lng);
-        this.form = { name: '', description: '', address: '' };
+        if (this.editingVenueId) {
+          await this.database.updateVenue(this.editingVenueId, name, description, address, type, lat, lng);
+          this.editingVenueId = null;
+        } else {
+          await this.database.addVenue(user.id, name, description, address, type, lat, lng);
+        }
+
+        this.form = { name: '', description: '', address: '', type: '' };
         if (this.marker) this.marker.setMap(null); // Clear marker
         if (this.map) {
              // Reset map or hide it? Maybe just leave it.
@@ -196,6 +261,31 @@ export class Tab2Page implements OnInit, AfterViewInit {
     } finally {
       this.saving = false;
     }
+  }
+
+  onEdit(venue: Venue) {
+    this.editingVenueId = venue.id;
+    this.form = {
+      name: venue.name,
+      description: venue.description || '',
+      address: venue.address || '',
+      type: venue.type || ''
+    };
+    
+    // Scroll to top
+    document.querySelector('ion-content')?.scrollToTop(500);
+
+    // Show on map if location exists
+    if (venue.lat && venue.lng) {
+      const location = new google.maps.LatLng(venue.lat, venue.lng);
+      this.showMap(location);
+    }
+  }
+
+  cancelEdit() {
+    this.editingVenueId = null;
+    this.form = { name: '', description: '', address: '', type: '' };
+    if (this.marker) this.marker.setMap(null);
   }
 
   async onClear(): Promise<void> {
@@ -234,6 +324,31 @@ export class Tab2Page implements OnInit, AfterViewInit {
   }
 
 
+
+  getCategoryLabel(id?: string): string {
+    if (!id) return '';
+    const category = this.categories.find(c => c.id === id);
+    return category ? category.label : id;
+  }
+
+  getCategoryIcon(id?: string): string {
+    if (!id) return 'pricetag-outline';
+    const category = this.categories.find(c => c.id === id);
+    return category ? category.icon : 'pricetag-outline';
+  }
+
+  openTypeModal() {
+    this.isTypeModalOpen = true;
+  }
+
+  closeTypeModal() {
+    this.isTypeModalOpen = false;
+  }
+
+  selectType(id: string) {
+    this.form.type = id;
+    this.closeTypeModal();
+  }
 
   async onDelete(id: number): Promise<void> {
     try {
