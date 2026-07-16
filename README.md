@@ -2,7 +2,7 @@
 
 Aplicación híbrida Ionic + Angular para descubrir lugares de entretenimiento cercanos (cines, arcades, cibercafés, escape rooms, centros de entretenimiento) usando Google Maps y Places. Para el ramo de programación de aplicaciones móviles de Duoc UC campus virtual.
 
-## Stack y librerías (esta parte del readme la hice con ia)
+## Stack y librerías
 
 ### Angular 20
 
