@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SQLite, SQLiteObject } from '@awesome-cordova-plugins/sqlite/ngx';
 import { Platform } from '@ionic/angular';
-import { Preferences } from '@capacitor/preferences';
+import { Storage } from '@ionic/storage-angular';
 
 export interface Venue {
   id: number;
@@ -42,7 +42,7 @@ export class DatabaseService {
   private readonly VENUES_KEY = 'venues';
   private readonly FAVORITES_KEY = 'favorites';
 
-  constructor(private sqlite: SQLite, private platform: Platform) {
+  constructor(private sqlite: SQLite, private platform: Platform, private storage: Storage) {
     this.isWeb = !this.platform.is('hybrid');
   }
 
@@ -50,7 +50,8 @@ export class DatabaseService {
     await this.platform.ready();
     
     if (this.isWeb) {
-      console.log('Running on Web, using Preferences (Storage) fallback.');
+      console.log('Running on Web, using IndexedDB (Storage) fallback.');
+      await this.storage.create();
       return;
     }
 
@@ -124,15 +125,18 @@ export class DatabaseService {
     `, []);
   }
 
-  // --- Helpers for Preferences ---
+  // --- Helpers for Web Storage ---
 
   private async getPrefs<T>(key: string): Promise<T[]> {
-    const { value } = await Preferences.get({ key });
-    return value ? JSON.parse(value) : [];
+    const value = await this.storage.get(key);
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch { return []; }
+    }
+    return value ? value : [];
   }
 
   private async setPrefs<T>(key: string, data: T[]): Promise<void> {
-    await Preferences.set({ key, value: JSON.stringify(data) });
+    await this.storage.set(key, data);
   }
 
   // --- venues ---

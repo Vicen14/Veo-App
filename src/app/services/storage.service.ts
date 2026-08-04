@@ -1,42 +1,46 @@
 import { Injectable } from '@angular/core';
-import { Preferences } from '@capacitor/preferences';
+import { Storage } from '@ionic/storage-angular';
 
 /**
- * wrapper de almacenamiento simple usando capacitor preferences como respaldo.
- * para soporte de producción/nativo sqlite puedes reemplazar los internos con
- * capacitor community sqlite o @ionic/storage-angular respaldado por sqlite.
+ * wrapper de almacenamiento usando @ionic/storage-angular (IndexedDB) como respaldo en web.
  */
 @Injectable({ providedIn: 'root' })
 export class StorageService {
   private prefix = 'cache:';
+  private isInitialized = false;
 
-  constructor() {}
+  constructor(private storage: Storage) {
+    this.init();
+  }
+
+  private async init() {
+    await this.storage.create();
+    this.isInitialized = true;
+  }
 
   private key(k: string) {
     return `${this.prefix}${k}`;
   }
 
   async set<T>(key: string, value: T): Promise<void> {
-    await Preferences.set({ key: this.key(key), value: JSON.stringify(value) });
+    if (!this.isInitialized) await this.init();
+    await this.storage.set(this.key(key), value);
   }
 
   async get<T>(key: string): Promise<T | null> {
-    const res = await Preferences.get({ key: this.key(key) });
-    if (!res.value) return null;
-    try {
-      return JSON.parse(res.value) as T;
-    } catch {
-      return null;
-    }
+    if (!this.isInitialized) await this.init();
+    const res = await this.storage.get(this.key(key));
+    if (res === null || res === undefined) return null;
+    return res as T;
   }
 
   async remove(key: string): Promise<void> {
-    await Preferences.remove({ key: this.key(key) });
+    if (!this.isInitialized) await this.init();
+    await this.storage.remove(this.key(key));
   }
 
   async clearAll(): Promise<void> {
-    // la api de preferences no proporciona un borrado con espacio de nombres, así que esto es una operación nula aquí.
-    // considera usar un motor de almacenamiento dedicado si necesitas esta característica.
-    return Promise.resolve();
+    if (!this.isInitialized) await this.init();
+    await this.storage.clear();
   }
 }

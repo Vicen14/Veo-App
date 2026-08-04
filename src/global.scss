@@ -95,3 +95,21 @@ ion-item {
 ion-fab-button {
   --box-shadow: 0 6px 16px rgba(51, 204, 255, 0.4);
 }
+
+/* Desktop Web Layout Adjustments */
+@media (min-width: 768px) {
+  ion-app {
+    max-width: 600px; /* Constrain width to look like a mobile app card */
+    margin: 0 auto;
+    border-left: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  body {
+    background-color: #f5f5f5; /* Light background behind the app card */
+  }
+}
